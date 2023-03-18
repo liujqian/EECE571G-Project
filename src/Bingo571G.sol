@@ -42,12 +42,49 @@ contract BingoEECE571G {
 
     // returns number of BINGOs for a card defined by game address and index
     function checkCard(address game_host, address player, uint index) public view returns(uint){
-        return 0;
+        games[game_host].player_cards[player][index].numbers; // how to check bingos?
+        uint8[5] memory columns = [1, 1, 1, 1, 1];
+        uint8[5] memory rows = [1, 1, 1, 1, 1];
+        uint down_diagonal = 1;
+        uint up_diagonal = 1;
+        
+        for(uint i=0; i<25; i++){
+            if(!isPresent(games[game_host].player_cards[player][index].numbers[i], games[game_host].numbers_drawn)){
+                columns[i/5] = 0;
+                rows[i%5] = 0;
+                if(i/5 == i%5){
+                    down_diagonal = 0;
+                }
+                if(i/5 == (5 - i%5)){
+                    up_diagonal = 0;
+                }
+            }
+        }
+
+        uint num_bingos = 0;
+
+        for(uint i=0; i<5; i++){
+            num_bingos += columns[i];
+            num_bingos += rows[i];
+        }
+        num_bingos += down_diagonal;
+        num_bingos += up_diagonal;
+
+        return num_bingos;
     }
 
     function checkGameStatus(address host) public view returns(bool is_valid, uint[] memory numbers){
         
         return(false, new uint[](0));
+    }
+
+    function isPresent(uint number, uint[] memory array) internal pure returns(bool present){
+        for(uint i=0; i<array.length; i++){
+            if(array[i] == number) {
+                return true;
+            }
+            return false;
+        }
     }
 
 }

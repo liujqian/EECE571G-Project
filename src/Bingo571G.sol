@@ -77,11 +77,12 @@ contract BingoEECE571G {
 
     // Draws next number for game with host address msg.sender, if it has been long enough since last draw
     function hostDrawNumber() public hostExists(msg.sender) {
+        address _sender = msg.sender;
         uint intervalsPassed = (block.timestamp - games[_sender].start_time) / games[_sender].turn_time + 1;
         uint numbersToDrawn = intervalsPassed - games[msg.sender].numbers_drawn.length;
         for (uint i = 0; i < numbersToDrawn; i++) {
-            uint randNumber = drawRandomNumber;
-            games[msg.sender].numbers_drawn.push(random_number);
+            uint randNumber = drawRandomNumber();
+            games[msg.sender].numbers_drawn.push(randNumber);
         }
     }
 

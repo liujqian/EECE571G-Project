@@ -62,7 +62,7 @@ contract BingoEECE571G {
         for(uint i=0; i<games[msg.sender].players.length; i++){
 
             address a = games[msg.sender].players[i];
-            games[msg.sender].player_cards[a] = new Card[](0);
+            //games[msg.sender].player_cards[a] = new Card[](0);
         }
 
         games[msg.sender].players = new address[](0);

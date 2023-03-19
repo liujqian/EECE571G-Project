@@ -9,6 +9,7 @@ struct Card{
 }
 
 struct Game {
+// @notice ALL THE TIME RELATED VARIABLES ARE IN SECONDS.
     address payable host_address;
     uint256 host_fee; // in Wei per Eth of pool value (fraction of pool x 10^18)
     uint256 start_time; // Unix timestamp of start time (must be in the future)
@@ -26,9 +27,9 @@ struct Game {
 
 contract BingoEECE571G {
 
-    address payable public constant dev_address = payable(address(0x100)); // change before deployment
-    mapping (address => Game) private games; // indexed by host address: can we do this and allow each address to host at most one game to keep things simple?
-    mapping (address => address[]) private player_games; // allows players to find the host addresses of their active games (can remove later if too gas intensive)
+    address payable public constant dev_address = payable(address(0x100)); // TODO: change before deployment
+    mapping(address => Game) private games; // indexed by host address: can we do this and allow each address to host at most one game to keep things simple?
+    mapping(address => address[]) private player_games; // allows players to find the host addresses of their active games (can remove later if too gas intensive)
 
     modifier hostExists(address _sender) {
         require(games[_sender].start_time > 0, "Host doesn't exist!");
@@ -36,12 +37,13 @@ contract BingoEECE571G {
     }
 
     modifier validInterval(address _sender) {
-        require(games[_sender].last_draw_time + games[_sender].turn_time < block.timestamp, 
-        "Not enough time has passed to draw a new number!");
+        uint intervalsPassed = (block.timestamp - games[_sender].start_time) / games[_sender].turn_time + 1;
+        require(games[_sender].numbers_drawn.length < intervalsPassed,
+            "Not enough time has passed to draw a new number!");
         _;
     }
-    
-    
+
+
     // creates a new game with msg.sender as host
     function createGame(uint _host_fee, uint _start_time, uint _turn_time) public{
         require(_start_time > block.timestamp, "Start time must be in the future.");
@@ -74,10 +76,37 @@ contract BingoEECE571G {
     }
 
     // Draws next number for game with host address msg.sender, if it has been long enough since last draw
-    function hostDrawNumber() public hostExists(msg.sender){
-        uint random_number = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender))) % 100;
+    function hostDrawNumber() public hostExists(msg.sender) {
+        uint intervalsPassed = (block.timestamp - games[_sender].start_time) / games[_sender].turn_time + 1;
+        uint numbersToDrawn = intervalsPassed - games[msg.sender].numbers_drawn.length;
+        for (uint i = 0; i < numbersToDrawn; i++) {
+            uint randNumber = drawRandomNumber;
+            games[msg.sender].numbers_drawn.push(random_number);
+        }
+    }
 
-        games[msg.sender].numbers_drawn.push(random_number);
+    function drawRandomNumber() private returns (uint) {
+        uint random_number = uint256(
+            keccak256(abi.encodePacked(block.timestamp, msg.sender))
+        ) % 100;
+        while (_checkRepeatedNumber(games[msg.sender].numbers_drawn, random_number)) {
+            random_number = uint256(
+                keccak256(abi.encodePacked(block.timestamp, msg.sender))
+            ) % 100;
+        }
+        return random_number;
+    }
+
+    function _checkRepeatedNumber(
+        uint[] storage numbersDrawn,
+        uint newNumber
+    ) private returns (bool) {
+        for (uint i = 0; i < numbersDrawn.length; i++) {
+            if (numbersDrawn[i] == newNumber) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // returns number of BINGOs for a card defined by game address and index
@@ -94,7 +123,7 @@ contract BingoEECE571G {
                 if(i/5 == i%5){
                     down_diagonal = 0;
                 }
-                if(i/5 == (5 - i%5)){
+                if (i / 5 == (5 - i % 5)) {
                     up_diagonal = 0;
                 }
             }
@@ -102,7 +131,7 @@ contract BingoEECE571G {
 
         uint num_bingos = 0;
 
-        for(uint i=0; i<5; i++){
+        for (uint i = 0; i < 5; i++) {
             num_bingos += columns[i];
             num_bingos += rows[i];
         }
@@ -112,14 +141,14 @@ contract BingoEECE571G {
         return num_bingos;
     }
 
-    function checkGameStatus(address host) public view returns(bool is_valid, uint[] memory numbers){
-        
-        return(false, new uint[](0));
+    function checkGameStatus(address host) public view returns (bool is_valid, uint[] memory numbers){
+
+        return (false, new uint[](0));
     }
 
-    function isPresent(uint number, uint[] memory array) internal pure returns(bool present){
-        for(uint i=0; i<array.length; i++){
-            if(array[i] == number) {
+    function isPresent(uint number, uint[] memory array) internal pure returns (bool present){
+        for (uint i = 0; i < array.length; i++) {
+            if (array[i] == number) {
                 return true;
             }
             return false;

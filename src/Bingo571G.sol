@@ -11,6 +11,7 @@ pragma solidity ^0.8.13;
     struct Game {
         // @notice ALL THE TIME RELATED VARIABLES ARE IN SECONDS.
         address payable host_address;
+        uint256 card_price;
         uint256 host_fee; // in Wei per Eth of pool value (fraction of pool x 10^18)
         uint256 start_time; // Unix timestamp of start time (must be in the future)
         uint256 turn_time; // time between draws
@@ -47,16 +48,16 @@ contract BingoEECE571G {
 
 
     // creates a new game with msg.sender as host
-    function createGame(uint _host_fee, uint _start_time, uint _turn_time) public returns (uint game_id){
+    function createGame(uint _card_price, uint _host_fee, uint _start_time, uint _turn_time) public returns (uint game_id){
         require(_start_time > block.timestamp, "Start time must be in the future.");
         num_games++;
         games[num_games].host_address = payable(msg.sender);
+        games[num_games].card_price = _card_price;
         games[num_games].host_fee = _host_fee;
         games[num_games].start_time = _start_time;
         games[num_games].turn_time = _turn_time;
         games[num_games].last_draw_time = 0;
-        games[num_games].numbers_drawn = [0];
-        // Initialize with 0 (free square)
+        games[num_games].numbers_drawn = [0]; // Initialize with 0 (free square)
         games[num_games].has_started = false;
         games[num_games].has_completed = false;
         games[num_games].pool_value = 0;
@@ -64,6 +65,46 @@ contract BingoEECE571G {
 
         return num_games;
     }
+
+    function buyCard(uint game_id, uint[25] memory _numbers) public payable { 
+        require(games[game_id].is_valid, "Game not valid");
+        require(!games[game_id].has_started, "Cannot join a game which has already started");
+        require(!games[game_id].has_completed, "Game has already completed");
+        require(msg.value == games[game_id].card_price, "Incorrect payment");
+
+        for(uint i=0; i<5; i++){
+            require(_numbers[i]>=1 && _numbers[i]<=19, "Numbers in first column must be in the range 1-19");
+        }
+        for(uint i=5; i<10; i++){
+            require(_numbers[i]>=20 && _numbers[i]<=39, "Numbers in second column must be in the range 20-39");
+        }
+        for(uint i=10; i<12; i++){
+            require(_numbers[i] >= 40 && _numbers[i] <=59, "Numbers in third column must be in the range 40-59");
+        }
+
+        require(_numbers[12]==0, "Must have 0 in center square (Free tile!)");
+
+        for(uint i=13; i<15; i++){
+            require(_numbers[i] >= 40 && _numbers[i] <=59, "Numbers in third column must be in the range 40-59");
+        }
+        for(uint i=15; i<20; i++){
+            require(_numbers[i]>=60 && _numbers[i]<=79, "Numbers in fourth column must be in the range 50-79");
+        }
+        for(uint i=20; i<25; i++){
+            require(_numbers[i]>=80 && _numbers[i]<=99, "Numbers in fifth column must be in the range 80-99");
+        }
+
+        uint256[3] memory superblocks;
+
+        games[game_id].player_cards[msg.sender].push(Card(_numbers, superblocks));
+
+        games[game_id].pool_value += msg.value;
+
+        }
+
+
+
+    
 
     // Draws next number for game with host address msg.sender, if it has been long enough since last draw
     function drawNumber(uint gameID) public gameExists(gameID) validInterval(gameID) {

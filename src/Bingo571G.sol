@@ -20,7 +20,6 @@ pragma solidity ^0.8.13;
         mapping(address => Card[]) player_cards; // mapping of addresses to array of cards, so players can check their cards easily
         uint[] numbers_drawn; // initialized with 0 in first entry for every game (free tile)
         bool is_valid;
-        bool has_started;
         bool has_completed;
         uint pool_value;
 
@@ -29,8 +28,8 @@ pragma solidity ^0.8.13;
 contract BingoEECE571G {
 
     address payable public constant dev_address = payable(address(0x100)); // TODO: change before deployment
-    mapping(uint => Game) private games; // indexed by host address: can we do this and allow each address to host at most one game to keep things simple?
-    mapping(address => uint[]) private player_games; // allows players to find the host addresses of their active games (can remove later if too gas intensive)
+    mapping(uint => Game) public games; // indexed by game IDs
+    mapping(address => uint[]) public player_games; // allows players to find the game IDs of their active games (can remove later if too gas intensive)
     uint public num_games;
 
 
@@ -69,8 +68,8 @@ contract BingoEECE571G {
         games[num_games].start_time = _start_time;
         games[num_games].turn_time = _turn_time;
         games[num_games].last_draw_time = 0;
-        games[num_games].numbers_drawn = [0]; // Initialize with 0 (free square)
-        games[num_games].has_started = false;
+        games[num_games].numbers_drawn = [0];
+        // Initialize with 0 (free square)
         games[num_games].has_completed = false;
         games[num_games].pool_value = 0;
         games[num_games].is_valid = true;
@@ -78,41 +77,31 @@ contract BingoEECE571G {
         return num_games;
     }
 
-    function startGame(uint game_id) public 
-        hostCalls(game_id, msg.sender) 
-        timePrecedence(games[game_id].start_time, block.timestamp) {
-            
-        games[game_id].has_started = true;
-    }
-
-
-
-    function buyCard(uint game_id, uint[25] memory _numbers) public payable { 
+    function buyCard(uint game_id, uint[25] memory _numbers) timePrecedence(games[game_id].start_time, block.timestamp) public payable {
         require(games[game_id].is_valid, "Game not valid");
-        require(!games[game_id].has_started, "Cannot join a game which has already started");
         require(!games[game_id].has_completed, "Game has already completed");
         require(msg.value == games[game_id].card_price, "Incorrect payment");
 
-        for(uint i=0; i<5; i++){
-            require(_numbers[i]>=1 && _numbers[i]<=19, "Numbers in first column must be in the range 1-19");
+        for (uint i = 0; i < 5; i++) {
+            require(_numbers[i] >= 1 && _numbers[i] <= 19, "Numbers in first column must be in the range 1-19");
         }
-        for(uint i=5; i<10; i++){
-            require(_numbers[i]>=20 && _numbers[i]<=39, "Numbers in second column must be in the range 20-39");
+        for (uint i = 5; i < 10; i++) {
+            require(_numbers[i] >= 20 && _numbers[i] <= 39, "Numbers in second column must be in the range 20-39");
         }
-        for(uint i=10; i<12; i++){
-            require(_numbers[i] >= 40 && _numbers[i] <=59, "Numbers in third column must be in the range 40-59");
+        for (uint i = 10; i < 12; i++) {
+            require(_numbers[i] >= 40 && _numbers[i] <= 59, "Numbers in third column must be in the range 40-59");
         }
 
-        require(_numbers[12]==0, "Must have 0 in center square (Free tile!)");
+        require(_numbers[12] == 0, "Must have 0 in center square (Free tile!)");
 
-        for(uint i=13; i<15; i++){
-            require(_numbers[i] >= 40 && _numbers[i] <=59, "Numbers in third column must be in the range 40-59");
+        for (uint i = 13; i < 15; i++) {
+            require(_numbers[i] >= 40 && _numbers[i] <= 59, "Numbers in third column must be in the range 40-59");
         }
-        for(uint i=15; i<20; i++){
-            require(_numbers[i]>=60 && _numbers[i]<=79, "Numbers in fourth column must be in the range 50-79");
+        for (uint i = 15; i < 20; i++) {
+            require(_numbers[i] >= 60 && _numbers[i] <= 79, "Numbers in fourth column must be in the range 50-79");
         }
-        for(uint i=20; i<25; i++){
-            require(_numbers[i]>=80 && _numbers[i]<=99, "Numbers in fifth column must be in the range 80-99");
+        for (uint i = 20; i < 25; i++) {
+            require(_numbers[i] >= 80 && _numbers[i] <= 99, "Numbers in fifth column must be in the range 80-99");
         }
 
         uint256[3] memory superblocks;
@@ -120,12 +109,7 @@ contract BingoEECE571G {
         games[game_id].player_cards[msg.sender].push(Card(_numbers, superblocks));
 
         games[game_id].pool_value += msg.value;
-
-        }
-
-
-
-    
+    }
 
     // Draws next number for game with host address msg.sender, if it has been long enough since last draw
     function drawNumber(uint gameID) public gameExists(gameID) validInterval(gameID) {
@@ -234,9 +218,25 @@ contract BingoEECE571G {
         return num_bingos;
     }
 
-    // function checkGameStatus(address host) public pure returns (bool is_valid, uint[] memory numbers){
-
-    //     return (false, new uint[](0));
-    // }
-
+    function checkGameStatus(uint gameID)
+    public
+    view
+    returns (uint256 cardPrice, uint256 startTime, uint256 hostFee, uint256 turnTime, bool hasCompleted, uint poolValue, uint[] memory numbersDrawn){
+        Game storage g = games[gameID];
+        cardPrice = g.card_price;
+        startTime = g.start_time;
+        hostFee = g.host_fee;
+        turnTime = g.turn_time;
+        hasCompleted = g.has_completed;
+        poolValue = g.pool_value;
+        numbersDrawn = new uint[](100);
+        uint i;
+        for (i = 0; i < g.numbers_drawn.length; i++) {
+            numbersDrawn[i] = g.numbers_drawn[i];
+        }
+        for (; i < 100; i++) {
+            numbersDrawn[i] = 100;
+            // 100 represents the number has not yet been drawn yet.
+        }
+    }
 }

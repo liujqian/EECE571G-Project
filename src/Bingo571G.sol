@@ -47,32 +47,21 @@ contract BingoEECE571G {
 
 
     // creates a new game with msg.sender as host
-    function createGame(uint _host_fee, uint _start_time, uint _turn_time) public{
+    function createGame(uint _host_fee, uint _start_time, uint _turn_time) public returns(uint game_id){
         require(_start_time > block.timestamp, "Start time must be in the future.");
         num_games++;
         games[num_games].host_address = payable(msg.sender);
-        games[msg.sender].host_fee = _host_fee;
-        games[msg.sender].start_time = _start_time;
-        games[msg.sender].turn_time = _turn_time;
-        games[msg.sender].last_draw_time = 0;
-        games[msg.sender].numbers_drawn = [0]; // Initialize with 0 (free square)
-        games[msg.sender].has_started = false;
-        games[msg.sender].has_completed = false;
-        games[msg.sender].pool_value = 0;
+        games[num_games].host_fee = _host_fee;
+        games[num_games].start_time = _start_time;
+        games[num_games].turn_time = _turn_time;
+        games[num_games].last_draw_time = 0;
+        games[num_games].numbers_drawn = [0]; // Initialize with 0 (free square)
+        games[num_games].has_started = false;
+        games[num_games].has_completed = false;
+        games[num_games].pool_value = 0;
+        games[num_games].is_valid = true;
 
-        // clear all data from previous games
-        for(uint i=0; i<games[msg.sender].players.length; i++){
-
-            address a = games[msg.sender].players[i];
-            //games[msg.sender].player_cards[a] = new Card[](0);
-        }
-
-        games[msg.sender].players = new address[](0);
-
-        games[msg.sender].is_valid = true;
-
-
-        return;
+        return num_games;
     }
 
     // Draws next number for game with host address msg.sender, if it has been long enough since last draw
@@ -111,20 +100,20 @@ contract BingoEECE571G {
     }
 
     // returns number of BINGOs for a card defined by game address and index
-    function checkCard(address _game_host, address player, uint index) public view returns(uint){
+    function checkCard(uint game_id, address player, uint index) public view returns(uint){
         uint8[5] memory columns = [1, 1, 1, 1, 1];
         uint8[5] memory rows = [1, 1, 1, 1, 1];
         uint down_diagonal = 1;
         uint up_diagonal = 1;
         
         for(uint i=0; i<25; i++){
-            if(!isPresent(games[_game_host].player_cards[player][index].numbers[i], games[_game_host].numbers_drawn)){
+            if(!isPresent(games[game_id].player_cards[player][index].numbers[i], games[game_id].numbers_drawn)){
                 columns[i/5] = 0;
                 rows[i%5] = 0;
                 if(i/5 == i%5){
                     down_diagonal = 0;
                 }
-                if (i / 5 == (5 - i % 5)) {
+                if (i / 5 == (4 - i % 5)) {
                     up_diagonal = 0;
                 }
             }

@@ -77,17 +77,55 @@ contract BingoEECE571G {
     }
 
     // Draws next number for game with host address msg.sender, if it has been long enough since last draw
-    function hostDrawNumber() public hostExists(msg.sender) {
-        address _sender = msg.sender;
-        uint intervalsPassed = (block.timestamp - games[_sender].start_time) / games[_sender].turn_time + 1;
-        uint numbersToDrawn = intervalsPassed - games[msg.sender].numbers_drawn.length;
+    function hostDrawNumber(address hostAddress) public hostExists(hostAddress) {
+        address host = hostAddress;
+        uint intervalsPassed = (block.timestamp - games[host].start_time) / games[host].turn_time + 1;
+        uint numbersToDrawn = intervalsPassed - games[host].numbers_drawn.length;
         for (uint i = 0; i < numbersToDrawn; i++) {
             uint randNumber = drawRandomNumber();
             games[msg.sender].numbers_drawn.push(randNumber);
         }
-        for (uint i = 0; i < games[_sender].players.length; i++) {
-            address curPlayer =games[_sender].players[i];
+        checkEndOfGame(host);
+    }
 
+    function checkEndOfGame(address hostAddress) private returns (bool) {
+        address host = hostAddress;
+        uint[] memory winnerStrikes = new uint[](games[host].players.length);
+        for (uint player_idx = 0; player_idx < games[host].players.length; player_idx++) {
+            address curPlayer = games[host].players[player_idx];
+            uint playerTotalStrikeCount = 0;
+            for (uint card_idx = 0; card_idx < games[host].player_cards[curPlayer].length; card_idx ++) {
+                uint strikeCount = checkCard(host, curPlayer, card_idx);
+                playerTotalStrikeCount += strikeCount;
+            }
+            winnerStrikes[player_idx] = playerTotalStrikeCount;
+        }
+        for (uint i = 0; i < games[host].players.length; i++) {
+            if (winnerStrikes[i] != 0) {
+                splitPrizePool(winnerStrikes, host);
+                games[host].has_completed = true;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function splitPrizePool(uint[] memory winnerStrikes, address hostAddress) private {
+        uint totalStrikes = 0;
+        for (uint i = 0; i < winnerStrikes.length; i++) {
+            totalStrikes += winnerStrikes[i];
+        }
+        uint poolSize = games[hostAddress].pool_value;
+        uint hostFee = games[hostAddress].host_fee;
+        // only a ratio, not the real cut that the host should get.
+        uint hostCut = (poolSize * (hostFee * 1 ether));
+        (payable(hostAddress)).transfer(hostCut);
+        uint poolSplitable = poolSize - hostCut;
+        for (uint i = 0; i < winnerStrikes.length; i++) {
+            address curWinner = games[hostAddress].players[i];
+            uint curWinnerStrikeCount = winnerStrikes[i];
+            uint curWinnerCut = poolSplitable * (curWinnerStrikeCount / totalStrikes);
+            (payable(curWinner)).transfer(curWinnerCut);
         }
     }
 

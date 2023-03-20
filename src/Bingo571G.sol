@@ -27,8 +27,8 @@ pragma solidity ^0.8.13;
 contract BingoEECE571G {
 
     address payable public constant dev_address = payable(address(0x100)); // TODO: change before deployment
-    mapping(uint => Game) private games; // indexed by host address: can we do this and allow each address to host at most one game to keep things simple?
-    mapping(address => uint[]) private player_games; // allows players to find the game IDs of their active games (can remove later if too gas intensive)
+    mapping(uint => Game) public games; // indexed by game IDs
+    mapping(address => uint[]) public player_games; // allows players to find the game IDs of their active games (can remove later if too gas intensive)
     uint public num_games;
 
 
@@ -220,8 +220,9 @@ contract BingoEECE571G {
         for (i = 0; i < g.numbers_drawn.length; i++) {
             numbersDrawn[i] = g.numbers_drawn[i];
         }
-        for (; i < 100; i++){
-            numbersDrawn[i] = 100; // 100 represents the number has not yet been drawn yet.
+        for (; i < 100; i++) {
+            numbersDrawn[i] = 100;
+            // 100 represents the number has not yet been drawn yet.
         }
     }
 }

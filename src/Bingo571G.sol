@@ -34,14 +34,24 @@ contract BingoEECE571G {
     uint public num_games;
 
 
-    modifier gameExists(uint gameID) {
-        require(games[gameID].start_time > 0, "Game doesn't exist!");
+    modifier gameExists(uint game_id) {
+        require(games[game_id].start_time > 0, "Game doesn't exist!");
         _;
     }
 
-    modifier validInterval(uint gameID) {
-        uint intervalsPassed = (block.timestamp - games[gameID].start_time) / games[gameID].turn_time + 1;
-        require(games[gameID].numbers_drawn.length < intervalsPassed,
+    modifier hostCalls(uint game_id, address _sender){
+        require(games[game_id].host_address == _sender);
+        _;
+    }
+
+    modifier timePrecedence(uint256 timestamp1, uint256 timestamp2){
+        require(timestamp2 > timestamp1);
+        _;
+    }
+
+    modifier validInterval(uint game_id) {
+        uint intervalsPassed = (block.timestamp - games[game_id].start_time) / games[game_id].turn_time + 1;
+        require(games[game_id].numbers_drawn.length < intervalsPassed,
             "Not enough time has passed to draw a new number!");
         _;
     }
@@ -50,7 +60,9 @@ contract BingoEECE571G {
     // creates a new game with msg.sender as host
     function createGame(uint _card_price, uint _host_fee, uint _start_time, uint _turn_time) public returns (uint game_id){
         require(_start_time > block.timestamp, "Start time must be in the future.");
+
         num_games++;
+
         games[num_games].host_address = payable(msg.sender);
         games[num_games].card_price = _card_price;
         games[num_games].host_fee = _host_fee;
@@ -65,6 +77,15 @@ contract BingoEECE571G {
 
         return num_games;
     }
+
+    function startGame(uint game_id) public 
+        hostCalls(game_id, msg.sender) 
+        timePrecedence(games[game_id].start_time, block.timestamp) {
+            
+        games[game_id].has_started = true;
+    }
+
+
 
     function buyCard(uint game_id, uint[25] memory _numbers) public payable { 
         require(games[game_id].is_valid, "Game not valid");
@@ -111,7 +132,7 @@ contract BingoEECE571G {
         uint intervalsPassed = (block.timestamp - games[gameID].start_time) / games[gameID].turn_time + 1;
         uint numbersToDrawn = intervalsPassed - games[gameID].numbers_drawn.length;
         for (uint i = 0; i < numbersToDrawn; i++) {
-            uint randNumber = drawRandomNumber(gameID);
+            uint randNumber = drawRandomNumber(gameID, 0, 100);
             games[gameID].numbers_drawn.push(randNumber);
         }
         checkEndOfGame(gameID);
@@ -157,10 +178,10 @@ contract BingoEECE571G {
         }
     }
 
-    function drawRandomNumber(uint gameID) private view returns (uint) {
+    function drawRandomNumber(uint gameID, uint start, uint end) private view returns (uint) {
         uint random_number = uint256(
             keccak256(abi.encodePacked(block.timestamp, msg.sender))
-        ) % 100;
+        ) % (end - start + 1) + start;
         while (_checkRepeatedNumber(games[gameID].numbers_drawn, random_number)) {
             random_number = uint256(
                 keccak256(abi.encodePacked(block.timestamp, msg.sender))
@@ -189,7 +210,7 @@ contract BingoEECE571G {
         uint up_diagonal = 1;
 
         for (uint i = 0; i < 25; i++) {
-            if (!isPresent(games[game_id].player_cards[player][index].numbers[i], games[game_id].numbers_drawn)) {
+            if (!_checkRepeatedNumber(games[game_id].numbers_drawn, games[game_id].player_cards[player][index].numbers[i])) {
                 columns[i / 5] = 0;
                 rows[i % 5] = 0;
                 if (i / 5 == i % 5) {
@@ -217,14 +238,5 @@ contract BingoEECE571G {
 
     //     return (false, new uint[](0));
     // }
-
-    function isPresent(uint number, uint[] memory array) internal pure returns (bool present){
-        for (uint i = 0; i < array.length; i++) {
-            if (array[i] == number) {
-                return true;
-            }
-        }
-        return false;
-    }
 
 }

@@ -157,7 +157,7 @@ contract BingoEECE571G {
         }
     }
 
-    function drawRandomNumber(uint gameID) private returns (uint) {
+    function drawRandomNumber(uint gameID) private view returns (uint) {
         uint random_number = uint256(
             keccak256(abi.encodePacked(block.timestamp, msg.sender))
         ) % 100;
@@ -172,7 +172,7 @@ contract BingoEECE571G {
     function _checkRepeatedNumber(
         uint[] storage numbersDrawn,
         uint newNumber
-    ) private returns (bool) {
+    ) private view returns (bool) {
         for (uint i = 0; i < numbersDrawn.length; i++) {
             if (numbersDrawn[i] == newNumber) {
                 return true;
@@ -213,18 +213,18 @@ contract BingoEECE571G {
         return num_bingos;
     }
 
-    function checkGameStatus(address host) public view returns (bool is_valid, uint[] memory numbers){
+    // function checkGameStatus(address host) public pure returns (bool is_valid, uint[] memory numbers){
 
-        return (false, new uint[](0));
-    }
+    //     return (false, new uint[](0));
+    // }
 
     function isPresent(uint number, uint[] memory array) internal pure returns (bool present){
         for (uint i = 0; i < array.length; i++) {
             if (array[i] == number) {
                 return true;
             }
-            return false;
         }
+        return false;
     }
 
 }

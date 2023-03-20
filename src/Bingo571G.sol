@@ -33,21 +33,21 @@ contract BingoEECE571G {
     uint public num_games;
 
 
-    modifier hostExists(address _sender) {
-        require(games[_sender].start_time > 0, "Host doesn't exist!");
+    modifier gameExists(uint gameID) {
+        require(games[gameID].start_time > 0, "Game doesn't exist!");
         _;
     }
 
-    modifier validInterval(address _sender) {
-        uint intervalsPassed = (block.timestamp - games[_sender].start_time) / games[_sender].turn_time + 1;
-        require(games[_sender].numbers_drawn.length < intervalsPassed,
+    modifier validInterval(uint gameID) {
+        uint intervalsPassed = (block.timestamp - games[gameID].start_time) / games[gameID].turn_time + 1;
+        require(games[gameID].numbers_drawn.length < intervalsPassed,
             "Not enough time has passed to draw a new number!");
         _;
     }
 
 
     // creates a new game with msg.sender as host
-    function createGame(uint _host_fee, uint _start_time, uint _turn_time) public returns(uint game_id){
+    function createGame(uint _host_fee, uint _start_time, uint _turn_time) public returns (uint game_id){
         require(_start_time > block.timestamp, "Start time must be in the future.");
         num_games++;
         games[num_games].host_address = payable(msg.sender);
@@ -55,7 +55,8 @@ contract BingoEECE571G {
         games[num_games].start_time = _start_time;
         games[num_games].turn_time = _turn_time;
         games[num_games].last_draw_time = 0;
-        games[num_games].numbers_drawn = [0]; // Initialize with 0 (free square)
+        games[num_games].numbers_drawn = [0];
+        // Initialize with 0 (free square)
         games[num_games].has_started = false;
         games[num_games].has_completed = false;
         games[num_games].pool_value = 0;
@@ -65,63 +66,61 @@ contract BingoEECE571G {
     }
 
     // Draws next number for game with host address msg.sender, if it has been long enough since last draw
-    function hostDrawNumber(address hostAddress) public hostExists(hostAddress) {
-        address host = hostAddress;
-        uint intervalsPassed = (block.timestamp - games[host].start_time) / games[host].turn_time + 1;
-        uint numbersToDrawn = intervalsPassed - games[host].numbers_drawn.length;
+    function drawNumber(uint gameID) public gameExists(gameID) validInterval(gameID) {
+        uint intervalsPassed = (block.timestamp - games[gameID].start_time) / games[gameID].turn_time + 1;
+        uint numbersToDrawn = intervalsPassed - games[gameID].numbers_drawn.length;
         for (uint i = 0; i < numbersToDrawn; i++) {
-            uint randNumber = drawRandomNumber();
-            games[msg.sender].numbers_drawn.push(randNumber);
+            uint randNumber = drawRandomNumber(gameID);
+            games[gameID].numbers_drawn.push(randNumber);
         }
-        checkEndOfGame(host);
+        checkEndOfGame(gameID);
     }
 
-    function checkEndOfGame(address hostAddress) private returns (bool) {
-        address host = hostAddress;
-        uint[] memory winnerStrikes = new uint[](games[host].players.length);
-        for (uint player_idx = 0; player_idx < games[host].players.length; player_idx++) {
-            address curPlayer = games[host].players[player_idx];
+    function checkEndOfGame(uint gameID) private returns (bool) {
+        uint[] memory winnerStrikes = new uint[](games[gameID].players.length);
+        for (uint player_idx = 0; player_idx < games[gameID].players.length; player_idx++) {
+            address curPlayer = games[gameID].players[player_idx];
             uint playerTotalStrikeCount = 0;
-            for (uint card_idx = 0; card_idx < games[host].player_cards[curPlayer].length; card_idx ++) {
-                uint strikeCount = checkCard(host, curPlayer, card_idx);
+            for (uint card_idx = 0; card_idx < games[gameID].player_cards[curPlayer].length; card_idx ++) {
+                uint strikeCount = checkCard(gameID, curPlayer, card_idx);
                 playerTotalStrikeCount += strikeCount;
             }
             winnerStrikes[player_idx] = playerTotalStrikeCount;
         }
-        for (uint i = 0; i < games[host].players.length; i++) {
+        for (uint i = 0; i < games[gameID].players.length; i++) {
             if (winnerStrikes[i] != 0) {
-                splitPrizePool(winnerStrikes, host);
-                games[host].has_completed = true;
+                splitPrizePool(winnerStrikes, gameID);
+                games[gameID].has_completed = true;
                 return true;
             }
         }
         return false;
     }
 
-    function splitPrizePool(uint[] memory winnerStrikes, address hostAddress) private {
+    function splitPrizePool(uint[] memory winnerStrikes, uint gameID) private {
         uint totalStrikes = 0;
         for (uint i = 0; i < winnerStrikes.length; i++) {
             totalStrikes += winnerStrikes[i];
         }
-        uint poolSize = games[hostAddress].pool_value;
-        uint hostFee = games[hostAddress].host_fee;
+        uint poolSize = games[gameID].pool_value;
+        uint hostFee = games[gameID].host_fee;
         // only a ratio, not the real cut that the host should get.
         uint hostCut = (poolSize * (hostFee * 1 ether));
-        (payable(hostAddress)).transfer(hostCut);
+        (payable(games[gameID].host_address)).transfer(hostCut);
         uint poolSplitable = poolSize - hostCut;
         for (uint i = 0; i < winnerStrikes.length; i++) {
-            address curWinner = games[hostAddress].players[i];
+            address curWinner = games[gameID].players[i];
             uint curWinnerStrikeCount = winnerStrikes[i];
             uint curWinnerCut = poolSplitable * (curWinnerStrikeCount / totalStrikes);
             (payable(curWinner)).transfer(curWinnerCut);
         }
     }
 
-    function drawRandomNumber() private returns (uint) {
+    function drawRandomNumber(uint gameID) private returns (uint) {
         uint random_number = uint256(
             keccak256(abi.encodePacked(block.timestamp, msg.sender))
         ) % 100;
-        while (_checkRepeatedNumber(games[msg.sender].numbers_drawn, random_number)) {
+        while (_checkRepeatedNumber(games[gameID].numbers_drawn, random_number)) {
             random_number = uint256(
                 keccak256(abi.encodePacked(block.timestamp, msg.sender))
             ) % 100;
@@ -142,17 +141,17 @@ contract BingoEECE571G {
     }
 
     // returns number of BINGOs for a card defined by game address and index
-    function checkCard(uint game_id, address player, uint index) public view returns(uint){
+    function checkCard(uint game_id, address player, uint index) public view returns (uint){
         uint8[5] memory columns = [1, 1, 1, 1, 1];
         uint8[5] memory rows = [1, 1, 1, 1, 1];
         uint down_diagonal = 1;
         uint up_diagonal = 1;
-        
-        for(uint i=0; i<25; i++){
-            if(!isPresent(games[game_id].player_cards[player][index].numbers[i], games[game_id].numbers_drawn)){
-                columns[i/5] = 0;
-                rows[i%5] = 0;
-                if(i/5 == i%5){
+
+        for (uint i = 0; i < 25; i++) {
+            if (!isPresent(games[game_id].player_cards[player][index].numbers[i], games[game_id].numbers_drawn)) {
+                columns[i / 5] = 0;
+                rows[i % 5] = 0;
+                if (i / 5 == i % 5) {
                     down_diagonal = 0;
                 }
                 if (i / 5 == (4 - i % 5)) {

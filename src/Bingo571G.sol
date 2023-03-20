@@ -28,7 +28,7 @@ contract BingoEECE571G {
 
     address payable public constant dev_address = payable(address(0x100)); // TODO: change before deployment
     mapping(uint => Game) private games; // indexed by host address: can we do this and allow each address to host at most one game to keep things simple?
-    mapping(address => uint[]) private player_games; // allows players to find the host addresses of their active games (can remove later if too gas intensive)
+    mapping(address => uint[]) private player_games; // allows players to find the game IDs of their active games (can remove later if too gas intensive)
     uint public num_games;
 
 

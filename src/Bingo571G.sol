@@ -28,8 +28,10 @@ struct Game {
 contract BingoEECE571G {
 
     address payable public constant dev_address = payable(address(0x100)); // TODO: change before deployment
-    mapping(address => Game) private games; // indexed by host address: can we do this and allow each address to host at most one game to keep things simple?
-    mapping(address => address[]) private player_games; // allows players to find the host addresses of their active games (can remove later if too gas intensive)
+    mapping(uint => Game) private games; // indexed by host address: can we do this and allow each address to host at most one game to keep things simple?
+    mapping(address => uint[]) private player_games; // allows players to find the host addresses of their active games (can remove later if too gas intensive)
+    uint public num_games;
+
 
     modifier hostExists(address _sender) {
         require(games[_sender].start_time > 0, "Host doesn't exist!");
@@ -47,10 +49,8 @@ contract BingoEECE571G {
     // creates a new game with msg.sender as host
     function createGame(uint _host_fee, uint _start_time, uint _turn_time) public{
         require(_start_time > block.timestamp, "Start time must be in the future.");
-        if(games[msg.sender].is_valid && !games[msg.sender].has_completed){
-            revert("Must wait until existing game has completed.");
-        }
-        games[msg.sender].host_address = payable(msg.sender);
+        num_games++;
+        games[num_games].host_address = payable(msg.sender);
         games[msg.sender].host_fee = _host_fee;
         games[msg.sender].start_time = _start_time;
         games[msg.sender].turn_time = _turn_time;

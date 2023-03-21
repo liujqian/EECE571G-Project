@@ -59,6 +59,7 @@ contract BingoEECE571G {
     // creates a new game with msg.sender as host
     function createGame(uint _card_price, uint _host_fee, uint _start_time, uint _turn_time) public returns (uint game_id){
         require(_start_time > block.timestamp, "Start time must be in the future.");
+        require(msg.value >= _card_price * 3, "The host needs to pay the starting pot of at least three times the card price.");
 
         num_games++;
 
@@ -71,9 +72,8 @@ contract BingoEECE571G {
         games[num_games].numbers_drawn = [0];
         // Initialize with 0 (free square)
         games[num_games].has_completed = false;
-        games[num_games].pool_value = 0;
+        games[num_games].pool_value = msg.value;
         games[num_games].is_valid = true;
-
         return num_games;
     }
 

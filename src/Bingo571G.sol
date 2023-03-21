@@ -57,7 +57,7 @@ contract BingoEECE571G {
 
 
     // creates a new game with msg.sender as host
-    function createGame(uint _card_price, uint _host_fee, uint _start_time, uint _turn_time) public returns (uint game_id){
+    function createGame(uint _card_price, uint _host_fee, uint _start_time, uint _turn_time) public payable returns (uint game_id){
         require(_start_time > block.timestamp, "Start time must be in the future.");
         require(msg.value >= _card_price * 3, "The host needs to pay the starting pot of at least three times the card price.");
 

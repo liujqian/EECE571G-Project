@@ -21,34 +21,37 @@ contract BingoEECE571GTest is Test {
     function setUp() public {
         bingo = new ExposedBingoEECE571G();
         // set block.timestamp to arbitrary time defined by "present_time"
-        vm.warp(present_time);                    
+        vm.warp(present_time);  
+        vm.deal(alice, 10 ether);
+        vm.deal(bob, 10 ether);
+        vm.deal(steve, 10 ether);                  
     }
 
     function test_setGameNumbers() public {
-        bingo.createGame(0.1 ether, 10**5, present_time + 1 days, 1 hours);
+        bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
         bingo._setGameNumbers(0, numbers);
         uint[] memory numbers_back;
         ( , , , , , , numbers_back) = bingo.checkGameStatus(0);
         assert(numbers_back[1] == 79);
     }
 
-    function testCreateNewGame() public {
+    function testCreateGame() public {
         // create 2 games 
-        bingo.createGame(0.1 ether, 10**5, present_time + 1 days, 1 hours);
-        bingo.createGame(0.2 ether, 10**6, present_time + 2 days, 30 minutes);
+        bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
+        bingo.createGame{value: 0.6 ether}(0.2 ether, 10**6, present_time + 2 days, 30 minutes);
 
         // another host makes another 2 games
         vm.prank(alice);
-        bingo.createGame(0.3 ether, 10**7, present_time + 1 days, 12 hours);
+        bingo.createGame{value: 0.9 ether}(0.3 ether, 10**7, present_time + 1 days, 12 hours);
         vm.prank(alice);
-        bingo.createGame(0.4 ether, 10**8, present_time + 2 days, 6 hours);
+        bingo.createGame{value: 1.2 ether}(0.4 ether, 10**8, present_time + 2 days, 6 hours);
 
         // another host tries to create 2 games but one is invalid
         vm.prank(bob);
-        bingo.createGame(0.05 ether, 10**9, present_time + 1 days, 12 hours);
+        bingo.createGame{value: 0.15 ether}(0.05 ether, 10**9, present_time + 1 days, 12 hours);
         vm.prank(bob);
         vm.expectRevert("Start time must be in the future.");
-        bingo.createGame(1 ether, 10**6, present_time - 1 days, 20 minutes);
+        bingo.createGame{value: 3 ether}(1 ether, 10**6, present_time - 1 days, 20 minutes);
 
         // check num_games
         assertEq(bingo.num_games(), 5);

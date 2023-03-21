@@ -107,6 +107,7 @@ contract BingoEECE571G {
         uint256[3] memory superblocks;
 
         games[game_id].player_cards[msg.sender].push(Card(_numbers, superblocks));
+        player_games[msg.sender].push(game_id);
 
         games[game_id].pool_value += msg.value;
     }

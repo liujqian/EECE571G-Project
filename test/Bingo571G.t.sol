@@ -4,17 +4,32 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/Bingo571G.sol";
 
+contract ExposedBingoEECE571G is BingoEECE571G{
+    function _setGameNumbers(uint game_id, uint[] memory _numbers) public{
+        games[game_id].numbers_drawn = _numbers;
+    }
+}
+
 contract BingoEECE571GTest is Test {
-    BingoEECE571G public bingo;
+    ExposedBingoEECE571G public bingo;
     address payable alice = payable(address(0x100));
     address payable bob = payable(address(0x200));
     address payable steve = payable(address(0x300));
+    uint[] numbers = [0, 79, 25];
     uint present_time = 10 days;
 
     function setUp() public {
-        bingo = new BingoEECE571G();
+        bingo = new ExposedBingoEECE571G();
         // set block.timestamp to arbitrary time defined by "present_time"
         vm.warp(present_time);                    
+    }
+
+    function test_setGameNumbers() public {
+        bingo.createGame(0.1 ether, 10**5, present_time + 1 days, 1 hours);
+        bingo._setGameNumbers(0, numbers);
+        uint[] memory numbers_back;
+        ( , , , , , , numbers_back) = bingo.checkGameStatus(0);
+        assert(numbers_back[1] == 79);
     }
 
     function testCreateNewGame() public {

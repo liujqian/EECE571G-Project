@@ -152,7 +152,7 @@ contract BingoEECE571G {
         uint poolSize = games[gameID].pool_value;
         uint hostFee = games[gameID].host_fee;
         // only a ratio, not the real cut that the host should get.
-        uint hostCut = (poolSize * (hostFee * 1 ether));
+        uint hostCut = (poolSize * (hostFee * 1 ether)); // TODO: shouldn't this be (poolSize * (hostFee / 1 ether))
         (payable(games[gameID].host_address)).transfer(hostCut);
         uint poolSplitable = poolSize - hostCut;
         for (uint i = 0; i < winnerStrikes.length; i++) {

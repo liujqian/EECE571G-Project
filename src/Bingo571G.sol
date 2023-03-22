@@ -44,7 +44,7 @@ contract BingoEECE571G {
     }
 
     modifier timePrecedence(uint256 timestamp1, uint256 timestamp2){
-        require(timestamp2 > timestamp1);
+        require(timestamp2 > timestamp1, "You cannot do this yet!");
         _;
     }
 

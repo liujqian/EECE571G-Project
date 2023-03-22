@@ -93,75 +93,76 @@ contract BingoEECE571GTest is Test {
         /* 
             Test valid/invalid number card purchases
             @notice takes a long time to compile and run (around 10 seconds) so comment/uncomment the test as necessary 
+            @notice takes a long time to compile and run (around 10 seconds) so comment/uncomment as necessary 
         */
-        // for(uint i = 0; i < 10; i++) {
-        //     card_numbers[random.randomNumber(0, 4)] = random.randomNumber(1, 19);
-        //     card_numbers[random.randomNumber(5, 9)] = random.randomNumber(20, 39);
-        //     card_numbers[random.randomNumber(10, 11)] = random.randomNumber(40, 59);
-        //     card_numbers[random.randomNumber(13, 14)] = random.randomNumber(40, 59);
-        //     card_numbers[random.randomNumber(15, 19)] = random.randomNumber(60, 79);
-        //     card_numbers[random.randomNumber(20, 24)] = random.randomNumber(80, 99);
+        for(uint i = 0; i < 10; i++) {
+            card_numbers[random.randomNumber(0, 4)] = random.randomNumber(1, 19);
+            card_numbers[random.randomNumber(5, 9)] = random.randomNumber(20, 39);
+            card_numbers[random.randomNumber(10, 11)] = random.randomNumber(40, 59);
+            card_numbers[random.randomNumber(13, 14)] = random.randomNumber(40, 59);
+            card_numbers[random.randomNumber(15, 19)] = random.randomNumber(60, 79);
+            card_numbers[random.randomNumber(20, 24)] = random.randomNumber(80, 99);
 
-        //     bingo.buyCard{value: 0.001 ether}(1, card_numbers);
-        // }
+            bingo.buyCard{value: 0.001 ether}(1, card_numbers);
+        }
 
-        // Test invalid card purchases
-        // for(uint i = 0; i < 10; i++) {
-        //     uint[25] memory cards = card_numbers;
+        //Test invalid card purchases
+        for(uint i = 0; i < 10; i++) {
+            uint[25] memory cards = card_numbers;
 
-        //     // FIRST ROW
-        //     cards[random.randomNumber(0, 4)] = random.randomNumber(20, 100);
-        //     vm.expectRevert("Numbers in first column must be in the range 1-19");
-        //     bingo.buyCard{value: 0.001 ether}(1, cards);
+            // FIRST ROW
+            cards[random.randomNumber(0, 4)] = random.randomNumber(20, 100);
+            vm.expectRevert("Numbers in first column must be in the range 1-19");
+            bingo.buyCard{value: 0.001 ether}(1, cards);
 
-        //     // SECOND ROW
-        //     cards = card_numbers;
-        //     cards[random.randomNumber(5, 9)] = random.randomNumber(0, 19);
-        //     vm.expectRevert("Numbers in second column must be in the range 20-39");
-        //     bingo.buyCard{value: 0.001 ether}(1, cards);
+            // SECOND ROW
+            cards = card_numbers;
+            cards[random.randomNumber(5, 9)] = random.randomNumber(0, 19);
+            vm.expectRevert("Numbers in second column must be in the range 20-39");
+            bingo.buyCard{value: 0.001 ether}(1, cards);
 
-        //     cards = card_numbers;
-        //     cards[random.randomNumber(5, 9)] = random.randomNumber(40, 100);
-        //     vm.expectRevert("Numbers in second column must be in the range 20-39");
-        //     bingo.buyCard{value: 0.001 ether}(1, cards);
+            cards = card_numbers;
+            cards[random.randomNumber(5, 9)] = random.randomNumber(40, 100);
+            vm.expectRevert("Numbers in second column must be in the range 20-39");
+            bingo.buyCard{value: 0.001 ether}(1, cards);
 
-        //     // THIRD ROW
-        //     cards = card_numbers;
-        //     cards[random.randomNumber(10, 11)] = random.randomNumber(0, 39);
-        //     vm.expectRevert("Numbers in third column must be in the range 40-59");
-        //     bingo.buyCard{value: 0.001 ether}(1, cards);
+            // THIRD ROW
+            cards = card_numbers;
+            cards[random.randomNumber(10, 11)] = random.randomNumber(0, 39);
+            vm.expectRevert("Numbers in third column must be in the range 40-59");
+            bingo.buyCard{value: 0.001 ether}(1, cards);
 
-        //     cards = card_numbers;
-        //     cards[random.randomNumber(10, 11)] = random.randomNumber(60, 100);
-        //     vm.expectRevert("Numbers in third column must be in the range 40-59");
-        //     bingo.buyCard{value: 0.001 ether}(1, cards);
+            cards = card_numbers;
+            cards[random.randomNumber(10, 11)] = random.randomNumber(60, 100);
+            vm.expectRevert("Numbers in third column must be in the range 40-59");
+            bingo.buyCard{value: 0.001 ether}(1, cards);
 
-        //     cards = card_numbers;
-        //     cards[12] = random.randomNumber(1, 100);
-        //     vm.expectRevert("Must have 0 in center square (Free tile!)");
-        //     bingo.buyCard{value: 0.001 ether}(1, cards);
+            cards = card_numbers;
+            cards[12] = random.randomNumber(1, 100);
+            vm.expectRevert("Must have 0 in center square (Free tile!)");
+            bingo.buyCard{value: 0.001 ether}(1, cards);
 
-        //     // FOURTH ROW
-        //     cards = card_numbers;
-        //     cards[random.randomNumber(15, 19)] = random.randomNumber(0, 49);
-        //     vm.expectRevert("Numbers in fourth column must be in the range 50-79");
-        //     bingo.buyCard{value: 0.001 ether}(1, cards);
+            // FOURTH ROW
+            cards = card_numbers;
+            cards[random.randomNumber(15, 19)] = random.randomNumber(0, 49);
+            vm.expectRevert("Numbers in fourth column must be in the range 50-79");
+            bingo.buyCard{value: 0.001 ether}(1, cards);
 
-        //     cards = card_numbers;
-        //     cards[random.randomNumber(15, 19)] = random.randomNumber(80, 100);
-        //     vm.expectRevert("Numbers in fourth column must be in the range 50-79");
-        //     bingo.buyCard{value: 0.001 ether}(1, cards);
+            cards = card_numbers;
+            cards[random.randomNumber(15, 19)] = random.randomNumber(80, 100);
+            vm.expectRevert("Numbers in fourth column must be in the range 50-79");
+            bingo.buyCard{value: 0.001 ether}(1, cards);
 
-        //     // FIFTH ROW
-        //     cards = card_numbers;
-        //     cards[random.randomNumber(20, 24)] = random.randomNumber(0, 79);
-        //     vm.expectRevert("Numbers in fifth column must be in the range 80-99");
-        //     bingo.buyCard{value: 0.001 ether}(1, cards);
+            // FIFTH ROW
+            cards = card_numbers;
+            cards[random.randomNumber(20, 24)] = random.randomNumber(0, 79);
+            vm.expectRevert("Numbers in fifth column must be in the range 80-99");
+            bingo.buyCard{value: 0.001 ether}(1, cards);
 
-        //     cards = card_numbers;
-        //     cards[random.randomNumber(20, 24)] = random.randomNumber(100, 200);
-        //     vm.expectRevert("Numbers in fifth column must be in the range 80-99");
-        //     bingo.buyCard{value: 0.001 ether}(1, cards);
-        // }
+            cards = card_numbers;
+            cards[random.randomNumber(20, 24)] = random.randomNumber(100, 200);
+            vm.expectRevert("Numbers in fifth column must be in the range 80-99");
+            bingo.buyCard{value: 0.001 ether}(1, cards);
+        }
     }
 }

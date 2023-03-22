@@ -92,7 +92,7 @@ contract BingoEECE571GTest is Test {
 
         /* 
             Test valid/invalid number card purchases
-            @notice takes a long time to compile and run (around 10 seconds) so comment/uncomment as necessary 
+            @notice takes a long time to compile and run (around 10 seconds) so comment/uncomment the test as necessary 
         */
         // for(uint i = 0; i < 10; i++) {
         //     card_numbers[random.randomNumber(0, 4)] = random.randomNumber(1, 19);

@@ -80,7 +80,7 @@ contract BingoEECE571GTest is Test {
     }
 
     /* 
-        @notice uses the foundry-random library which causes it to take a long time to compile and run
+        @notice uses the foundry-random library which takes a long time to compile and run
         comment/uncomment as necessary (also comment the import and 2 initializations)
     */
     // function testBuyCard() public {
@@ -215,55 +215,77 @@ contract BingoEECE571GTest is Test {
 
     function testCheckCard() public {
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
+        bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
 
         vm.startPrank(address100);
         vm.warp(present_time + 2 days);
 
         bingo.buyCard{value: 0.1 ether}(1, card_numbers);
+        bingo.buyCard{value: 0.1 ether}(2, card_numbers);
 
         // Row Bingo
         drawn_numbers = [0, 1, 2, 3, 4, 5];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 1, "r1");
+        assertEq(bingo.checkCard(2, address100, 0), 0, "r1");
 
         drawn_numbers = [0, 61, 62, 63, 64, 65];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 1, "r2");
+        assertEq(bingo.checkCard(2, address100, 0), 0, "r2");
 
         // Column Bingo
         drawn_numbers = [0, 2, 22, 42, 62, 82];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 1, "c1");
+        assertEq(bingo.checkCard(2, address100, 0), 0, "c1");
 
         drawn_numbers = [0, 4, 24, 44, 64, 84];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 1, "c2");
+        assertEq(bingo.checkCard(2, address100, 0), 0, "c2");
 
         // Diagonals
         drawn_numbers = [0, 1, 22, 64, 85];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 1, "d1");
+        assertEq(bingo.checkCard(2, address100, 0), 0, "d1");
 
         drawn_numbers = [0, 5, 24, 62, 81];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 1, "d2");
+        assertEq(bingo.checkCard(2, address100, 0), 0, "d2");
 
         // Multiple Bingos
         drawn_numbers = [0, 1, 4, 22, 24, 25, 41, 44, 45, 42, 63, 64, 65, 81, 84];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 2, "m1");
+        assertEq(bingo.checkCard(2, address100, 0), 0, "m1");
 
         drawn_numbers = [0, 1, 4, 22, 85, 25, 3, 44, 45, 42, 63, 64, 65, 81, 84, 23, 83];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 2, "m2");
+        assertEq(bingo.checkCard(2, address100, 0), 0, "m2");
 
         drawn_numbers = [0, 41, 42, 44, 45, 3, 23, 63, 83, 61, 62, 64, 65];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 3, "m3");
+        assertEq(bingo.checkCard(2, address100, 0), 0, "m3");
 
         drawn_numbers = [0, 1, 22, 64, 85, 61, 62, 63, 65, 4, 24, 44, 84];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 3, "m4");
+        assertEq(bingo.checkCard(2, address100, 0), 0, "m4");
+
+        // Invalid calls
+        vm.expectRevert("You do not have any cards!");
+        assertEq(bingo.checkCard(1, address200, 0), 0, "eq");
+        vm.expectRevert("You do not have any cards!");
+        assertEq(bingo.checkCard(2, address300, 0), 0, "e2");
+        vm.expectRevert("You do not have a card at this index");
+        assertEq(bingo.checkCard(1, address100, 1), 0, "e3");
+        vm.expectRevert("You do not have a card at this index");
+        assertEq(bingo.checkCard(2, address100, 2), 0, "e4");
 
         // No bingos
         drawn_numbers = [0, 1, 22, 76, 85, 61, 62, 63, 65, 4, 24, 44, 84];

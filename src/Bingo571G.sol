@@ -187,6 +187,8 @@ contract BingoEECE571G {
 
     // returns number of BINGOs for a card defined by game address and index
     function checkCard(uint game_id, address player, uint index) public view returns (uint){
+        require(games[game_id].player_cards[player].length > 0, "You do not have any cards!");
+        require(games[game_id].player_cards[player].length > index, "You do not have a card at this index");
         uint8[5] memory columns = [1, 1, 1, 1, 1];
         uint8[5] memory rows = [1, 1, 1, 1, 1];
         uint down_diagonal = 1;

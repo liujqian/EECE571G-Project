@@ -79,6 +79,10 @@ contract BingoEECE571GTest is Test {
         assertEq(address(bingo).balance, 1.15 ether);
     }
 
+    /* 
+        @notice uses the foundry-random library which causes it to take a long time to compile and run
+        comment/uncomment as necessary (also comment the import and 2 initializations)
+    */
     // function testBuyCard() public {
     //     bingo.createGame{value: 0.1 ether}(0.001 ether, 10**5, present_time + 1 days, 1 hours);
     //     bingo.createGame{value: 1 ether}(0.2 ether, 10**5, present_time + 1 days, 1 hours);

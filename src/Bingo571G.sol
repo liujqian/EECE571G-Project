@@ -22,7 +22,6 @@ pragma solidity ^0.8.13;
         bool is_valid;
         bool has_completed;
         uint pool_value;
-
     }
 
 contract BingoEECE571G {
@@ -31,7 +30,6 @@ contract BingoEECE571G {
     mapping(uint => Game) public games; // indexed by game IDs
     mapping(address => uint[]) public player_games; // allows players to find the game IDs of their active games (can remove later if too gas intensive)
     uint public num_games;
-
 
     modifier gameExists(uint game_id) {
         require(games[game_id].start_time > 0, "Game doesn't exist!");
@@ -77,7 +75,7 @@ contract BingoEECE571G {
         return num_games;
     }
 
-    function buyCard(uint game_id, uint[25] memory _numbers) timePrecedence(games[game_id].start_time, block.timestamp) public payable {
+    function buyCard(uint game_id, uint[25] memory _numbers) timePrecedence(games[game_id].start_time, block.timestamp) gameExists(game_id) public payable {
         require(games[game_id].is_valid, "Game not valid");
         require(!games[game_id].has_completed, "Game has already completed");
         require(msg.value == games[game_id].card_price, "Incorrect payment");

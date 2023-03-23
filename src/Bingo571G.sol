@@ -42,7 +42,7 @@ contract BingoEECE571G {
     }
 
     modifier timePrecedence(uint256 timestamp1, uint256 timestamp2){
-        require(timestamp2 > timestamp1, "You cannot do this yet!");
+        require(timestamp2 < timestamp1, "You cannot do this anymore!");
         _;
     }
 
@@ -75,7 +75,7 @@ contract BingoEECE571G {
         return num_games;
     }
 
-    function buyCard(uint game_id, uint[25] memory _numbers) timePrecedence(games[game_id].start_time, block.timestamp) gameExists(game_id) public payable {
+    function buyCard(uint game_id, uint[25] memory _numbers) timePrecedence(games[game_id].start_time, block.timestamp) public payable {
         require(games[game_id].is_valid, "Game not valid");
         require(!games[game_id].has_completed, "Game has already completed");
         require(msg.value == games[game_id].card_price, "Incorrect payment");

@@ -21,6 +21,10 @@ contract ExposedBingoEECE571G is BingoEECE571G{
     function getPoolValue(uint game_id) public view returns(uint) {
         return games[game_id].pool_value;
     }
+
+    function getNumbersDrawn(uint game_id) public view returns(uint[] memory) {
+        return games[game_id].numbers_drawn;
+    }
 }
 
 contract BingoEECE571GTest is Test {
@@ -42,7 +46,7 @@ contract BingoEECE571GTest is Test {
 
     function setUp() public {
         bingo = new ExposedBingoEECE571G();
-        random = new FoundryRandom();
+        //random = new FoundryRandom();
         // set block.timestamp to arbitrary time defined by "present_time"
         vm.warp(present_time);  
         vm.deal(address100, 10 ether);
@@ -83,7 +87,7 @@ contract BingoEECE571GTest is Test {
         @notice uses the foundry-random library which takes a long time to compile and run
         comment/uncomment as necessary (also comment the import and 2 initializations)
     */
-    function testBuyCard() public {
+    function testBuyCard() private {
         bingo.createGame{value: 0.1 ether}(0.001 ether, 10**5, present_time + 1 days, 1 hours);
         bingo.createGame{value: 1 ether}(0.2 ether, 10**5, present_time + 1 days, 1 hours);
         
@@ -249,7 +253,7 @@ contract BingoEECE571GTest is Test {
         assertEq(bingo.getPoolValue(2), 2.2 ether);
     }
 
-    function testCheckCard() public {
+    function testCheckCard() private {
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
 
@@ -339,5 +343,21 @@ contract BingoEECE571GTest is Test {
         drawn_numbers = [0, 5, 1, 81, 85, 83, 3, 41, 45, 21, 64, 63];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 0, "n4");
+    }
+
+    function testDraw() public {
+        uint[] memory numbers_back;
+        bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
+        
+        vm.prank(address100);
+        bingo.buyCard{value: 0.1 ether}(1, card_numbers);
+        present_time += 1 days + 1 hours;
+        vm.warp(present_time);
+
+        bingo.drawNumber(1);
+
+        numbers_back = bingo.getNumbersDrawn(1);
+        emit log_uint(numbers_back.length);
+        emit log_uint(numbers_back[1]);
     }   
 }

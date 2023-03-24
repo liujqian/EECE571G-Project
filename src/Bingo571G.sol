@@ -81,8 +81,6 @@ contract BingoEECE571G {
         require(!games[game_id].has_completed, "Game has already completed");
         require(msg.value == games[game_id].card_price, "Incorrect payment");
 
-        require(_cardNumbersUnique(_numbers), "Numbers can not be repeated");
-
         for (uint i = 0; i < 5; i++) {
             require(_numbers[i] >= 1 && _numbers[i] <= 19, "Numbers in first column must be in the range 1-19");
         }
@@ -105,7 +103,9 @@ contract BingoEECE571G {
             require(_numbers[i] >= 80 && _numbers[i] <= 99, "Numbers in fifth column must be in the range 80-99");
         }
 
-        uint[3] memory superblocks;
+        require(_cardNumbersUnique(_numbers), "Numbers can not be repeated");
+
+        uint256[3] memory superblocks;
 
         games[game_id].player_cards[msg.sender].push(Card(_numbers, superblocks));
         player_games[msg.sender].push(game_id);
@@ -114,15 +114,28 @@ contract BingoEECE571G {
     }
 
     function _cardNumbersUnique(uint[25] memory numbers) public pure returns(bool){
-        for(uint i=0; i<numbers.length; i++){
-            for(uint j = 0; j<numbers.length; j++){
-                if(numbers[i]==numbers[j] && j!=i){
-                    return false;
+        for(uint row = 0; row < 5; row++) {
+            for(uint i=row*5; i<(row+1)*5; i++){
+                for(uint j = i+1; j<(row+1)*5; j++){
+                    if(numbers[i]==numbers[j] && j!=i){
+                        return false;
+                    }
                 }
-            }
+            }   
         }
         return true;
     }
+
+    // function _cardNumbersUnique(uint[25] memory numbers) public pure returns(bool){
+    //     for(uint i=0; i<numbers.length; i++){
+    //         for(uint j = 0; j<numbers.length; j++){
+    //             if(numbers[i]==numbers[j] && j!=i){
+    //                 return false;
+    //             }
+    //         }
+    //     }
+    //     return true;
+    // }
 
     // Draws next number for game with host address msg.sender, if it has been long enough since last draw
     function drawNumber(uint gameID) public gameExists(gameID) validInterval(gameID) hostOrPlayersCall(gameID, msg.sender) {

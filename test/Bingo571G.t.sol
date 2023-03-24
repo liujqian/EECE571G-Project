@@ -406,7 +406,7 @@ contract BingoEECE571GTest is Test {
         (, , , , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
         console.log("Has completed:", hasCompleted);        // SHOULD BE TRUE
         console.log("Host balance:", address100.balance);   // wrong
-        console.log("Host balance:", address100.balance);   // wrong
+        console.log("Player balance:", address200.balance);   // wrong
     }
 
 }

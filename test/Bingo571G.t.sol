@@ -115,25 +115,27 @@ contract BingoEECE571GTest is Test {
             @notice takes a long time to compile and run (around 10 seconds) so comment/uncomment the test as necessary 
             @notice takes a long time to compile and run (around 10 seconds) so comment/uncomment as necessary 
         */
+        uint[25] memory cards = card_numbers;
         for(uint i = 0; i < 10; i++) {
-            card_numbers[random.randomNumber(0, 4)] = random.randomNumber(1, 19);
-            card_numbers[random.randomNumber(5, 9)] = random.randomNumber(20, 39);
-            card_numbers[random.randomNumber(10, 11)] = random.randomNumber(40, 59);
-            card_numbers[random.randomNumber(13, 14)] = random.randomNumber(40, 59);
-            card_numbers[random.randomNumber(15, 19)] = random.randomNumber(60, 79);
-            card_numbers[random.randomNumber(20, 24)] = random.randomNumber(80, 99);
+            cards = card_numbers;
+            cards[random.randomNumber(0, 4)] = random.randomNumber(6, 19);
+            cards[random.randomNumber(5, 9)] = random.randomNumber(26, 39);
+            cards[random.randomNumber(10, 11)] = random.randomNumber(46, 49);
+            cards[random.randomNumber(13, 14)] = random.randomNumber(50, 59);
+            cards[random.randomNumber(15, 19)] = random.randomNumber(66, 79);
+            cards[random.randomNumber(20, 24)] = random.randomNumber(86, 99);
 
-            bingo.buyCard{value: 0.001 ether}(1, card_numbers);
+            bingo.buyCard{value: 0.001 ether}(1, cards);
 
             if(i % 2 == 0) {
-                bingo.buyCard{value: 0.2 ether}(2, card_numbers);
+                bingo.buyCard{value: 0.2 ether}(2, cards);
             }
         }
 
-        //Test invalid card purchases
-        uint[25] memory cards = card_numbers;
+        //Test number of of range card purchases (invalid cards)
         for(uint i = 0; i < 10; i++) {
             // FIRST ROW
+            cards = card_numbers;
             cards[random.randomNumber(0, 4)] = random.randomNumber(20, 100);
             vm.expectRevert("Numbers in first column must be in the range 1-19");
             bingo.buyCard{value: 0.001 ether}(1, cards);
@@ -187,7 +189,39 @@ contract BingoEECE571GTest is Test {
             vm.expectRevert("Numbers in fifth column must be in the range 80-99");
             bingo.buyCard{value: 0.001 ether}(1, cards);
         }
+
+        // Test repeated number cards (invalid cards)
+        cards = card_numbers;
+        cards[3] = cards[2];
+        vm.expectRevert("Numbers can not be repeated");
+        bingo.buyCard{value: 0.001 ether}(1, cards);
+
+        cards = card_numbers;
+        cards[5] = cards[6];
+        vm.expectRevert("Numbers can not be repeated");
+        bingo.buyCard{value: 0.001 ether}(1, cards);
+
+        cards = card_numbers;
+        cards[9] = cards[8];
+        vm.expectRevert("Numbers can not be repeated");
+        bingo.buyCard{value: 0.001 ether}(1, cards);
+
+        cards = card_numbers;
+        cards[14] = cards[10];
+        vm.expectRevert("Numbers can not be repeated");
+        bingo.buyCard{value: 0.001 ether}(1, cards);
+
+        cards = card_numbers;
+        cards[17] = cards[18];
+        vm.expectRevert("Numbers can not be repeated");
+        bingo.buyCard{value: 0.001 ether}(1, cards);
+
+        cards = card_numbers;
+        cards[20] = cards[22];
+        vm.expectRevert("Numbers can not be repeated");
+        bingo.buyCard{value: 0.001 ether}(1, cards);
  
+        // Test other people buying cards
         vm.stopPrank();
         cards = card_numbers;
 

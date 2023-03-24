@@ -57,13 +57,13 @@ contract BingoEECE571GTest is Test {
     function test_setGameNumbers() public {
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
         drawn_numbers = [0, 79, 25];
-        bingo._setGameNumbers(0, drawn_numbers);
+        bingo._setGameNumbers(1, drawn_numbers);
         uint[] memory numbers_back;
-        ( , , , , , , numbers_back) = bingo.checkGameStatus(0);
+        ( , , , , , , numbers_back) = bingo.checkGameStatus(1);
         assert(numbers_back[1] == 79);
     }
     
-    function testCreateGame() public {
+    function testCreateGame() private {
         // create 2 games 
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
         bingo.createGame{value: 0.7 ether}(0.2 ether, 10**6, present_time + 2 days, 30 minutes);
@@ -379,6 +379,32 @@ contract BingoEECE571GTest is Test {
                 emit log_uint(numbers_back[i]);
             }
         }
+    }
+
+    function testEndOfGame() public {
+        bool hasCompleted;
+        uint poolValue; 
+        
+        vm.prank(address100);
+        bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
+        
+        vm.prank(address200);
+        card_numbers[17] = 75;
+        bingo.buyCard{value: 0.1 ether}(1, card_numbers);
+
+        present_time += 1 days + 1 + 4 hours;
+        vm.warp(present_time);
+        vm.startPrank(address100); //host
+
+        drawn_numbers = [0, 61, 62, 64, 65];
+        bingo._setGameNumbers(1, drawn_numbers);
+        
+        bingo.drawNumber(1);    // should draw 75 resulting in a bingo
+        assertEq(bingo.checkCard(1, address200, 0), 1);
+
+        //(cardPrice, startTime, hostFee, turnTime, hasCompleted, poolValue, numbersDrawn) = bingo.checkGameStatus(1);
+        (, , , , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
+        console.log("Has completed:", hasCompleted); // SHOULD BE TRUE
     }
 
 }

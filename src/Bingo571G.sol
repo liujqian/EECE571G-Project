@@ -111,7 +111,14 @@ contract BingoEECE571G {
         uint256[3] memory superblocks;
 
         games[game_id].player_cards[msg.sender].push(Card(_numbers, superblocks));
-        player_games[msg.sender].push(game_id);
+
+        if(!_checkRepeatedNumber(player_games[msg.sender], game_id)){
+            player_games[msg.sender].push(game_id);
+        }
+        if(!_checkRepeatedAddress(games[game_id].players, msg.sender)){
+            games[game_id].players.push(msg.sender);
+        }
+        
 
         games[game_id].pool_value += msg.value;
     }

@@ -11,11 +11,11 @@ pragma solidity ^0.8.13;
     struct Game {
         // @notice ALL THE TIME RELATED VARIABLES ARE IN SECONDS.
         address payable host_address;
-        uint256 card_price;
-        uint256 host_fee; // in Wei per Eth of pool value (fraction of pool x 10^18)
-        uint256 start_time; // Unix timestamp of start time (must be in the future)
-        uint256 turn_time; // time between draws
-        uint256 last_draw_time;
+        uint card_price;
+        uint host_fee; // in Wei per Eth of pool value (fraction of pool x 10^18)
+        uint start_time; // Unix timestamp of start time (must be in the future)
+        uint turn_time; // time between draws
+        uint last_draw_time;
         address[] players; // array of players, which we can iterate over to check for a winner
         mapping(address => Card[]) player_cards; // mapping of addresses to array of cards, so players can check their cards easily
         uint[] numbers_drawn; // initialized with 0 in first entry for every game (free tile)
@@ -42,7 +42,7 @@ contract BingoEECE571G {
         _;
     }
 
-    modifier timePrecedence(uint256 timestamp1, uint256 timestamp2){
+    modifier timePrecedence(uint timestamp1, uint timestamp2){
         require(timestamp2 < timestamp1, "You cannot do this anymore!");
         _;
     }
@@ -105,7 +105,7 @@ contract BingoEECE571G {
             require(_numbers[i] >= 80 && _numbers[i] <= 99, "Numbers in fifth column must be in the range 80-99");
         }
 
-        uint256[3] memory superblocks;
+        uint[3] memory superblocks;
 
         games[game_id].player_cards[msg.sender].push(Card(_numbers, superblocks));
         player_games[msg.sender].push(game_id);
@@ -167,10 +167,27 @@ contract BingoEECE571G {
         }
         uint poolSize = games[gameID].pool_value;
         uint hostFee = games[gameID].host_fee;
+        address[] memory players = games[gameID].players;
+
         // only a ratio, not the real cut that the host should get.
-        uint hostCut = (poolSize * (hostFee * 1 ether)); // TODO: shouldn't this be (poolSize * (hostFee / 1 ether))
-        (payable(games[gameID].host_address)).transfer(hostCut);
-        uint poolSplitable = poolSize - hostCut;
+
+        //ToDo: Decide whether hostFee is a percentage, i.e., (between 0 and 100) or a fraction of Ether
+        uint initHostCut = (poolSize * (hostFee / 1 ether)); //hostFee: fraction of Ether
+        // uint initHostCut = (poolSize * (hostFee * 1 ether / 100)); //hostFee: percentange
+        
+        uint callerBaseCut = initHostCut / 100;
+        uint allCalls = 0;
+        for (uint i = 0; i < players.length; i++) {
+            uint curCalls = games[gameID].caller_players[players[i]];
+            if (curCalls > 0) {
+                (payable(games[gameID].host_address)).transfer(initHostCut * curCalls);    
+                allCalls += curCalls;
+            }
+        }
+
+        (payable(games[gameID].host_address)).transfer(initHostCut - allCalls * callerBaseCut);
+
+        uint poolSplitable = poolSize - initHostCut;
         for (uint i = 0; i < winnerStrikes.length; i++) {
             address curWinner = games[gameID].players[i];
             uint curWinnerStrikeCount = winnerStrikes[i];
@@ -180,11 +197,11 @@ contract BingoEECE571G {
     }
 
     function drawRandomNumber(uint gameID, uint start, uint end) private view returns (uint) {
-        uint random_number = uint256(
+        uint random_number = uint(
             keccak256(abi.encodePacked(block.timestamp, msg.sender))
         ) % (end - start + 1) + start;
         while (_checkRepeatedNumber(games[gameID].numbers_drawn, random_number)) {
-            random_number = uint256(
+            random_number = uint(
                 keccak256(abi.encodePacked(block.timestamp, msg.sender))
             ) % 100;
         }
@@ -252,7 +269,7 @@ contract BingoEECE571G {
     function checkGameStatus(uint gameID)
     public
     view
-    returns (uint256 cardPrice, uint256 startTime, uint256 hostFee, uint256 turnTime, bool hasCompleted, uint poolValue, uint[] memory numbersDrawn){
+    returns (uint cardPrice, uint startTime, uint hostFee, uint turnTime, bool hasCompleted, uint poolValue, uint[] memory numbersDrawn){
         Game storage g = games[gameID];
         cardPrice = g.card_price;
         startTime = g.start_time;

@@ -19,6 +19,7 @@ pragma solidity ^0.8.13;
         address[] players; // array of players, which we can iterate over to check for a winner
         mapping(address => Card[]) player_cards; // mapping of addresses to array of cards, so players can check their cards easily
         uint[] numbers_drawn; // initialized with 0 in first entry for every game (free tile)
+        mapping(address => uint) caller_players; // mapping of addresses to the number of  valid calls (resulted in drawing next number/numbers)
         bool is_valid;
         bool has_completed;
         uint pool_value;
@@ -36,8 +37,8 @@ contract BingoEECE571G {
         _;
     }
 
-    modifier hostCalls(uint game_id, address _sender){
-        require(games[game_id].host_address == _sender);
+    modifier hostOrPlayersCall(uint game_id, address _sender){
+        require((games[game_id].host_address == _sender) || (_checkRepeatedAddress(games[game_id].players, _sender)));
         _;
     }
 
@@ -192,6 +193,18 @@ contract BingoEECE571G {
     ) private view returns (bool) {
         for (uint i = 0; i < numbersDrawn.length; i++) {
             if (numbersDrawn[i] == newNumber) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function _checkRepeatedAddress(
+        address[] storage addresses,
+        address newAddress
+    ) private view returns (bool) {
+        for (uint i = 0; i < addresses.length; i++) {
+            if (addresses[i] == newAddress) {
                 return true;
             }
         }

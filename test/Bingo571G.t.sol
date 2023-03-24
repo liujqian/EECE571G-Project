@@ -381,7 +381,7 @@ contract BingoEECE571GTest is Test {
         }
     }
 
-    function testEndOfGame() public {
+    function testEndOfGame1() private {
         bool hasCompleted;
         uint poolValue; 
         
@@ -404,9 +404,40 @@ contract BingoEECE571GTest is Test {
 
         //(cardPrice, startTime, hostFee, turnTime, hasCompleted, poolValue, numbersDrawn) = bingo.checkGameStatus(1);
         (, , , , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
-        console.log("Has completed:", hasCompleted);        // SHOULD BE TRUE
-        console.log("Host balance:", address100.balance);   // wrong
+        console.log("Has completed:", hasCompleted);          // SHOULD BE TRUE
+        console.log("Host balance:", address100.balance);     // wrong
         console.log("Player balance:", address200.balance);   // wrong
+    }
+
+    function testEndOfGame2() public {
+        bool hasCompleted;
+        uint poolValue; 
+        uint[] memory drawnNumbers;
+        
+        vm.prank(address100);
+        bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
+        
+        vm.prank(address200);
+        card_numbers[17] = 75;
+        bingo.buyCard{value: 0.1 ether}(1, card_numbers);
+
+        present_time += 1 days + 1;
+        vm.warp(present_time);
+
+        vm.startPrank(address100);
+        for(uint i = 0; i < 15; i++) {
+            bingo.drawNumber(1);
+            present_time += 1 hours;
+            vm.warp(present_time);
+
+        }
+
+        drawnNumbers = bingo.getNumbersDrawn(1);
+
+        for(uint i = 0; i < drawnNumbers.length; i++) {
+            console.log(drawnNumbers[i]);
+        }
+
     }
 
 }

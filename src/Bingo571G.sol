@@ -125,9 +125,13 @@ contract BingoEECE571G {
     }
 
     // Draws next number for game with host address msg.sender, if it has been long enough since last draw
-    function drawNumber(uint gameID) public gameExists(gameID) validInterval(gameID) {
+    function drawNumber(uint gameID) public gameExists(gameID) validInterval(gameID) hostOrPlayersCall(gameID, msg.sender) {
         uint intervalsPassed = (block.timestamp - games[gameID].start_time) / games[gameID].turn_time + 1;
         uint numbersToDrawn = intervalsPassed - games[gameID].numbers_drawn.length;
+
+        if (msg.sender != games[gameID].host_address)
+            games[gameID].caller_players[msg.sender] += numbersToDrawn;
+
         for (uint i = 0; i < numbersToDrawn; i++) {
             uint randNumber = drawRandomNumber(gameID, 0, 100);
             games[gameID].numbers_drawn.push(randNumber);

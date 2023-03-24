@@ -400,11 +400,13 @@ contract BingoEECE571GTest is Test {
         bingo._setGameNumbers(1, drawn_numbers);
         
         bingo.drawNumber(1);    // should draw 75 resulting in a bingo
-        assertEq(bingo.checkCard(1, address200, 0), 1);
+        assertEq(bingo.checkCard(1, address200, 0), 1); // passes, bingo did indeed happen
 
         //(cardPrice, startTime, hostFee, turnTime, hasCompleted, poolValue, numbersDrawn) = bingo.checkGameStatus(1);
         (, , , , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
-        console.log("Has completed:", hasCompleted); // SHOULD BE TRUE
+        console.log("Has completed:", hasCompleted);        // SHOULD BE TRUE
+        console.log("Host balance:", address100.balance);   // wrong
+        console.log("Host balance:", address100.balance);   // wrong
     }
 
 }

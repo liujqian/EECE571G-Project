@@ -48,6 +48,7 @@ contract BingoEECE571G {
     }
 
     modifier validInterval(uint game_id) {
+        // numerator could be negative if called before game starts but will then be assigned to uint, check to prevent this
         require(block.timestamp > games[game_id].start_time, "Not enough time has passed to draw a new number!");
         uint intervalsPassed = (block.timestamp - games[game_id].start_time) / games[game_id].turn_time + 1;
         // numbers_drawn.length is 1 initially, not 0

@@ -345,19 +345,29 @@ contract BingoEECE571GTest is Test {
         assertEq(bingo.checkCard(1, address100, 0), 0, "n4");
     }
 
-    function testDraw() public {
-        uint[] memory numbers_back;
+    function testNumberOfDraws() public {
+        // Test number of numbers drawn
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
+        assertEq(bingo.getNumbersDrawn(1).length-1, 0);
         
         vm.prank(address100);
         bingo.buyCard{value: 0.1 ether}(1, card_numbers);
-        present_time += 1 days + 1 hours;
+
+        present_time += 1 days + 1;
         vm.warp(present_time);
+        bingo.drawNumber(1);    // should draw one number
+        assertEq(bingo.getNumbersDrawn(1).length-1, 1);
 
-        bingo.drawNumber(1);
+        present_time += 2 hours;
+        vm.warp(present_time);
+        bingo.drawNumber(1);    // should draw 2 numbers
+        assertEq(bingo.getNumbersDrawn(1).length-1, 3);
 
-        numbers_back = bingo.getNumbersDrawn(1);
-        emit log_uint(numbers_back.length);
-        emit log_uint(numbers_back[1]);
-    }   
+        present_time += 2 days;
+        vm.warp(present_time);
+        bingo.drawNumber(1);    // should draw 24 numbers
+        assertEq(bingo.getNumbersDrawn(1).length-1, 51);
+    }
+    
+       
 }

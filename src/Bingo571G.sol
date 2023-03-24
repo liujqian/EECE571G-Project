@@ -48,8 +48,10 @@ contract BingoEECE571G {
     }
 
     modifier validInterval(uint game_id) {
+        require(block.timestamp > games[game_id].start_time, "Not enough time has passed to draw a new number!");
         uint intervalsPassed = (block.timestamp - games[game_id].start_time) / games[game_id].turn_time + 1;
-        require(games[game_id].numbers_drawn.length < intervalsPassed,
+        // numbers_drawn.length is 1 initially, not 0
+        require(games[game_id].numbers_drawn.length - 1 < intervalsPassed,
             "Not enough time has passed to draw a new number!");
         _;
     }
@@ -129,7 +131,7 @@ contract BingoEECE571G {
     // Draws next number for game with host address msg.sender, if it has been long enough since last draw
     function drawNumber(uint gameID) public gameExists(gameID) validInterval(gameID) hostOrPlayersCall(gameID, msg.sender) {
         uint intervalsPassed = (block.timestamp - games[gameID].start_time) / games[gameID].turn_time + 1;
-        uint numbersToDrawn = intervalsPassed - games[gameID].numbers_drawn.length;
+        uint numbersToDrawn = intervalsPassed - (games[gameID].numbers_drawn.length-1);
 
         if (msg.sender != games[gameID].host_address)
             games[gameID].caller_players[msg.sender] += numbersToDrawn;

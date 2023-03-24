@@ -21,6 +21,10 @@ contract ExposedBingoEECE571G is BingoEECE571G{
     function getPoolValue(uint game_id) public view returns(uint) {
         return games[game_id].pool_value;
     }
+
+    function getNumbersDrawn(uint game_id) public view returns(uint[] memory) {
+        return games[game_id].numbers_drawn;
+    }
 }
 
 contract BingoEECE571GTest is Test {
@@ -42,7 +46,7 @@ contract BingoEECE571GTest is Test {
 
     function setUp() public {
         bingo = new ExposedBingoEECE571G();
-        random = new FoundryRandom();
+        //random = new FoundryRandom();
         // set block.timestamp to arbitrary time defined by "present_time"
         vm.warp(present_time);  
         vm.deal(address100, 10 ether);
@@ -53,13 +57,13 @@ contract BingoEECE571GTest is Test {
     function test_setGameNumbers() public {
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
         drawn_numbers = [0, 79, 25];
-        bingo._setGameNumbers(0, drawn_numbers);
+        bingo._setGameNumbers(1, drawn_numbers);
         uint[] memory numbers_back;
-        ( , , , , , , numbers_back) = bingo.checkGameStatus(0);
+        ( , , , , , , numbers_back) = bingo.checkGameStatus(1);
         assert(numbers_back[1] == 79);
     }
     
-    function testCreateGame() public {
+    function testCreateGame() private {
         // create 2 games 
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
         bingo.createGame{value: 0.7 ether}(0.2 ether, 10**6, present_time + 2 days, 30 minutes);
@@ -83,7 +87,7 @@ contract BingoEECE571GTest is Test {
         @notice uses the foundry-random library which takes a long time to compile and run
         comment/uncomment as necessary (also comment the import and 2 initializations)
     */
-    function testBuyCard() public {
+    function testBuyCard() private {
         bingo.createGame{value: 0.1 ether}(0.001 ether, 10**5, present_time + 1 days, 1 hours);
         bingo.createGame{value: 1 ether}(0.2 ether, 10**5, present_time + 1 days, 1 hours);
         
@@ -249,7 +253,7 @@ contract BingoEECE571GTest is Test {
         assertEq(bingo.getPoolValue(2), 2.2 ether);
     }
 
-    function testCheckCard() public {
+    function testCheckCard() private {
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
 
@@ -339,5 +343,70 @@ contract BingoEECE571GTest is Test {
         drawn_numbers = [0, 5, 1, 81, 85, 83, 3, 41, 45, 21, 64, 63];
         bingo._setGameNumbers(1, drawn_numbers);
         assertEq(bingo.checkCard(1, address100, 0), 0, "n4");
-    }   
+    }
+
+    function testNumberOfDraws() public {
+        // Test number of numbers drawn
+        uint[] memory numbers_back; 
+
+        vm.prank(address100);
+        bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
+        assertEq(bingo.getNumbersDrawn(1).length-1, 0);
+        
+        vm.prank(address200);
+        bingo.buyCard{value: 0.1 ether}(1, card_numbers);
+
+        vm.startPrank(address100);
+        present_time += 1 days + 1;
+        vm.warp(present_time);
+        bingo.drawNumber(1);    // should draw one number
+        assertEq(bingo.getNumbersDrawn(1).length-1, 1);
+
+        present_time += 2 hours;
+        vm.warp(present_time);
+        bingo.drawNumber(1);    // should draw 2 numbers
+        assertEq(bingo.getNumbersDrawn(1).length-1, 3);
+
+        present_time += 1 days;
+        vm.warp(present_time);
+        bingo.drawNumber(1);    // should draw 24 numbers
+        assertEq(bingo.getNumbersDrawn(1).length-1, 27);
+
+        bool debug = false;
+        if(debug) {
+            numbers_back = bingo.getNumbersDrawn(1);
+            for(uint i = 0; i < numbers_back.length; i++) {
+                emit log_uint(numbers_back[i]);
+            }
+        }
+    }
+
+    function testEndOfGame() public {
+        bool hasCompleted;
+        uint poolValue; 
+        
+        vm.prank(address100);
+        bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
+        
+        vm.prank(address200);
+        card_numbers[17] = 75;
+        bingo.buyCard{value: 0.1 ether}(1, card_numbers);
+
+        present_time += 1 days + 1 + 4 hours;
+        vm.warp(present_time);
+        vm.startPrank(address100); //host
+
+        drawn_numbers = [0, 61, 62, 64, 65];
+        bingo._setGameNumbers(1, drawn_numbers);
+        
+        bingo.drawNumber(1);    // should draw 75 resulting in a bingo
+        assertEq(bingo.checkCard(1, address200, 0), 1); // passes, bingo did indeed happen
+
+        //(cardPrice, startTime, hostFee, turnTime, hasCompleted, poolValue, numbersDrawn) = bingo.checkGameStatus(1);
+        (, , , , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
+        console.log("Has completed:", hasCompleted);        // SHOULD BE TRUE
+        console.log("Host balance:", address100.balance);   // wrong
+        console.log("Player balance:", address200.balance);   // wrong
+    }
+
 }

@@ -33,7 +33,7 @@ contract BingoEECE571G {
     uint public num_games;
 
     modifier gameExists(uint game_id) {
-        require(games[game_id].start_time > 0, "Game doesn't exist!");
+        require(games[game_id].start_time > 0 && game_id > 0, "Game doesn't exist!");
         _;
     }
 
@@ -48,8 +48,11 @@ contract BingoEECE571G {
     }
 
     modifier validInterval(uint game_id) {
+        // numerator could be negative if called before game starts but will then be assigned to uint, check to prevent this
+        require(block.timestamp > games[game_id].start_time, "Not enough time has passed to draw a new number!");
         uint intervalsPassed = (block.timestamp - games[game_id].start_time) / games[game_id].turn_time + 1;
-        require(games[game_id].numbers_drawn.length < intervalsPassed,
+        // numbers_drawn.length is 1 initially, not 0
+        require(games[game_id].numbers_drawn.length - 1 < intervalsPassed,
             "Not enough time has passed to draw a new number!");
         _;
     }
@@ -126,21 +129,10 @@ contract BingoEECE571G {
         return true;
     }
 
-    // function _cardNumbersUnique(uint[25] memory numbers) public pure returns(bool){
-    //     for(uint i=0; i<numbers.length; i++){
-    //         for(uint j = 0; j<numbers.length; j++){
-    //             if(numbers[i]==numbers[j] && j!=i){
-    //                 return false;
-    //             }
-    //         }
-    //     }
-    //     return true;
-    // }
-
     // Draws next number for game with host address msg.sender, if it has been long enough since last draw
     function drawNumber(uint gameID) public gameExists(gameID) validInterval(gameID) hostOrPlayersCall(gameID, msg.sender) {
         uint intervalsPassed = (block.timestamp - games[gameID].start_time) / games[gameID].turn_time + 1;
-        uint numbersToDrawn = intervalsPassed - games[gameID].numbers_drawn.length;
+        uint numbersToDrawn = intervalsPassed - (games[gameID].numbers_drawn.length-1);
 
         if (msg.sender != games[gameID].host_address)
             games[gameID].caller_players[msg.sender] += numbersToDrawn;
@@ -210,13 +202,15 @@ contract BingoEECE571G {
     }
 
     function drawRandomNumber(uint gameID, uint start, uint end) private view returns (uint) {
+        uint i = 0; 
         uint random_number = uint(
-            keccak256(abi.encodePacked(block.timestamp, msg.sender))
+            keccak256(abi.encodePacked(block.timestamp, msg.sender, i))
         ) % (end - start + 1) + start;
         while (_checkRepeatedNumber(games[gameID].numbers_drawn, random_number)) {
+            i++;
             random_number = uint(
-                keccak256(abi.encodePacked(block.timestamp, msg.sender))
-            ) % 100;
+                keccak256(abi.encodePacked(block.timestamp, msg.sender, i))
+            ) % (end - start + 1) + start;
         }
         return random_number;
     }

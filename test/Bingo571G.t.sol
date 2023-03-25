@@ -50,7 +50,7 @@ contract BingoEECE571GTest is Test {
 
     function setUp() public {
         bingo = new ExposedBingoEECE571G();
-        //random = new FoundryRandom();
+        random = new FoundryRandom();
         // set block.timestamp to arbitrary time defined by "present_time"
         vm.warp(present_time);  
         vm.deal(address100, 10 ether);
@@ -67,7 +67,7 @@ contract BingoEECE571GTest is Test {
         assert(numbers_back[1] == 79);
     }
     
-    function testCreateGame() private {
+    function testCreateGame() public {
         // create 2 games 
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
         bingo.createGame{value: 0.7 ether}(0.2 ether, 10**6, present_time + 2 days, 30 minutes);
@@ -82,6 +82,11 @@ contract BingoEECE571GTest is Test {
         vm.expectRevert("Start time must be in the future.");
         bingo.createGame{value: 3 ether}(1 ether, 10**6, present_time - 1 days, 20 minutes);
 
+        // host fee too high
+        vm.prank(address100);
+        vm.expectRevert("The host cut proportion must be less than 1 ether");
+        bingo.createGame{value: 3 ether}(1 ether, 10**19, present_time - 1 days, 20 minutes);
+
         // check num_games
         assertEq(bingo.num_games(), 3);
         assertEq(address(bingo).balance, 1.15 ether);
@@ -91,17 +96,11 @@ contract BingoEECE571GTest is Test {
         @notice uses the foundry-random library which takes a long time to compile and run
         comment/uncomment as necessary (also comment the import and 2 initializations)
     */
-    function testBuyCard() private {
+    function testBuyCard1() public {
         bingo.createGame{value: 0.1 ether}(0.001 ether, 10**5, present_time + 1 days, 1 hours);
         bingo.createGame{value: 1 ether}(0.2 ether, 10**5, present_time + 1 days, 1 hours);
         
         vm.startPrank(address100);
-
-        // non existent game
-        // TODO: Rework test now that timePrecedence supercedes this
-        // vm.expectRevert("Game not valid");
-        // bingo.buyCard{value: 0.001 ether}(5, card_numbers);
-
 
         // game already started
         vm.warp(present_time+ 2 days);
@@ -115,14 +114,6 @@ contract BingoEECE571GTest is Test {
         vm.expectRevert("Incorrect payment");
         bingo.buyCard{value: 0.005 ether}(1, card_numbers);
 
-        // bingo.buyCard{value: 1 ether}(1, [1, 2, 3, 4, 5, 21, 22, 23, 24, 25, 41, 42, 0, 43, 45, 61, 62, 63, 64, 65, 81, 81, 83, 84, 85]);
-        // throws error Invalid implicit conversion from uint8[25] memory to uint256[25] memory requested.
-
-        /* 
-            Test valid/invalid number card purchases
-            @notice takes a long time to compile and run (around 10 seconds) so comment/uncomment the test as necessary 
-            @notice takes a long time to compile and run (around 10 seconds) so comment/uncomment as necessary 
-        */
         uint[25] memory cards = card_numbers;
         for(uint i = 0; i < 10; i++) {
             cards = card_numbers;
@@ -257,12 +248,40 @@ contract BingoEECE571GTest is Test {
         assertEq(bingo.getPoolValue(2), 2.2 ether);
     }
 
-    function testCheckCard() private {
+    function testBuyCard2() public {
+        // non existent game
+        vm.expectRevert("Game doesn't exist!");
+        bingo.buyCard{value: 0.001 ether}(5, card_numbers);
+
+        vm.prank(address100);
+        bingo.createGame{value: 0.3 ether}(0.1 ether, 10**16, present_time + 1 days, 1 hours);
+        
+        vm.prank(address200);
+        card_numbers[17] = 75;
+        bingo.buyCard{value: 0.1 ether}(1, card_numbers);
+
+        present_time += 1 days + 1 + 4 hours;
+        vm.warp(present_time);
+        vm.startPrank(address100); //host
+
+        drawn_numbers = [0, 61, 62, 64, 65];
+        bingo._setGameNumbers(1, drawn_numbers);
+        bingo.drawNumber(1);
+
+        bool hasCompleted;
+        (, , , , hasCompleted, , ) = bingo.checkGameStatus(1);
+        assertTrue(hasCompleted);
+
+        card_numbers[1] = 9;
+        vm.expectRevert("You cannot do this anymore!");
+        bingo.buyCard{value: 0.1 ether}(1, card_numbers);
+    }
+
+    function testCheckCard() public {
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
 
         vm.startPrank(address100);
-        //vm.warp(present_time + 2 days);
 
         bingo.buyCard{value: 0.1 ether}(1, card_numbers);
         bingo.buyCard{value: 0.1 ether}(2, card_numbers);
@@ -408,7 +427,6 @@ contract BingoEECE571GTest is Test {
         bingo.drawNumber(1);    // should draw 75 resulting in a bingo
         assertEq(bingo.checkCard(1, address200, 0), 1); // passes, bingo did indeed happen
 
-        //(cardPrice, startTime, hostFee, turnTime, hasCompleted, poolValue, numbersDrawn) = bingo.checkGameStatus(1);
         (, , hostFee, , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
         assertTrue(hasCompleted);
 
@@ -588,6 +606,55 @@ contract BingoEECE571GTest is Test {
         assertEq(address100.balance - 7 ether, p1);
         assertEq(address200.balance - 9 ether, poolValue - hostCut + p2);
         assertEq(address300.balance - 9 ether, p3);
+    }
+
+    // Invalid calls to games
+    function testEndOfGame5() public {
+        bool hasCompleted;
+        
+        vm.prank(address100);
+        bingo.createGame{value: 0.3 ether}(0.1 ether, 10**16, present_time + 1 days, 1 hours);
+        
+        vm.prank(address200);
+        card_numbers[24] = 86;
+        bingo.buyCard{value: 0.1 ether}(1, card_numbers);
+
+        // before game start
+        vm.warp(present_time + 1 hours);
+        vm.expectRevert("Not enough time has passed to draw a new number!");
+        bingo.drawNumber(1);
+
+        present_time += 1 days + 1 + 4 hours;
+        vm.warp(present_time);
+        
+        drawn_numbers = [0, 81, 82, 83, 84];
+        bingo._setGameNumbers(1, drawn_numbers);
+
+        // external player tries to draw
+        vm.expectRevert("You are not part of this game");
+        vm.prank(address300);
+        bingo.drawNumber(1);
+        
+        vm.startPrank(address100);
+        bingo.drawNumber(1);    
+
+        vm.warp(present_time + 30 minutes);
+        vm.expectRevert("Not enough time has passed to draw a new number!");
+        bingo.drawNumber(1);
+
+        present_time += 1 hours;
+        vm.warp(present_time);
+        bingo.drawNumber(1);
+
+        assertEq(bingo.checkCard(1, address200, 0), 1);
+
+        (, , , , hasCompleted, , ) = bingo.checkGameStatus(1);
+        assertTrue(hasCompleted);
+
+        present_time += 1 hours;
+        vm.warp(present_time);
+        vm.expectRevert("The game is over");
+        bingo.drawNumber(1);
     }
 
 }

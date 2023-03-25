@@ -184,7 +184,7 @@ contract BingoEECE571G {
         // only a ratio, not the real cut that the host should get.
 
         //ToDo: Decide whether hostFee is a percentage, i.e., (between 0 and 100) or a fraction of Ether
-        uint initHostCut = (poolSize * (hostFee / 1 ether)); //hostFee: fraction of Ether
+        uint initHostCut = (poolSize * hostFee / 1 ether); //hostFee: fraction of Ether
         // uint initHostCut = (poolSize * (hostFee * 1 ether / 100)); //hostFee: percentange
         
         uint callerBaseCut = initHostCut / 100;
@@ -203,7 +203,7 @@ contract BingoEECE571G {
         for (uint i = 0; i < winnerStrikes.length; i++) {
             address curWinner = games[gameID].players[i];
             uint curWinnerStrikeCount = winnerStrikes[i];
-            uint curWinnerCut = poolSplitable * (curWinnerStrikeCount / totalStrikes);
+            uint curWinnerCut = (poolSplitable * curWinnerStrikeCount) / totalStrikes;
             (payable(curWinner)).transfer(curWinnerCut);
         }
     }

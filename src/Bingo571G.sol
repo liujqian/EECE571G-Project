@@ -38,7 +38,7 @@ contract BingoEECE571G {
     }
 
     modifier hostOrPlayersCall(uint game_id, address _sender){
-        require((games[game_id].host_address == _sender) || (_checkRepeatedAddress(games[game_id].players, _sender)));
+        require((games[game_id].host_address == _sender) || (_checkRepeatedAddress(games[game_id].players, _sender)), "You are not part of this game");
         _;
     }
 
@@ -48,6 +48,7 @@ contract BingoEECE571G {
     }
 
     modifier validInterval(uint game_id) {
+        require(!games[game_id].has_completed, "The game is over");
         // numerator could be negative if called before game starts but will then be assigned to uint, check to prevent this
         require(block.timestamp > games[game_id].start_time, "Not enough time has passed to draw a new number!");
         uint intervalsPassed = (block.timestamp - games[game_id].start_time) / games[game_id].turn_time + 1;
@@ -60,6 +61,7 @@ contract BingoEECE571G {
 
     // creates a new game with msg.sender as host
     function createGame(uint _card_price, uint _host_fee, uint _start_time, uint _turn_time) public payable returns (uint game_id){
+        require(_host_fee < 1 ether, "The host cut proportion must be less than 1 ether");
         require(_start_time > block.timestamp, "Start time must be in the future.");
         require(msg.value >= _card_price * 3, "The host needs to pay the starting pot of at least three times the card price.");
 
@@ -79,8 +81,7 @@ contract BingoEECE571G {
         return num_games;
     }
 
-    function buyCard(uint game_id, uint[25] memory _numbers) timePrecedence(games[game_id].start_time, block.timestamp) public payable {
-        require(games[game_id].is_valid, "Game not valid");
+    function buyCard(uint game_id, uint[25] memory _numbers) gameExists(game_id) timePrecedence(games[game_id].start_time, block.timestamp) public payable {
         require(!games[game_id].has_completed, "Game has already completed");
         require(msg.value == games[game_id].card_price, "Incorrect payment");
 
@@ -184,7 +185,7 @@ contract BingoEECE571G {
         // only a ratio, not the real cut that the host should get.
 
         //ToDo: Decide whether hostFee is a percentage, i.e., (between 0 and 100) or a fraction of Ether
-        uint initHostCut = (poolSize * (hostFee / 1 ether)); //hostFee: fraction of Ether
+        uint initHostCut = (poolSize * hostFee / 1 ether); //hostFee: fraction of Ether
         // uint initHostCut = (poolSize * (hostFee * 1 ether / 100)); //hostFee: percentange
         
         uint callerBaseCut = initHostCut / 100;
@@ -192,7 +193,7 @@ contract BingoEECE571G {
         for (uint i = 0; i < players.length; i++) {
             uint curCalls = games[gameID].caller_players[players[i]];
             if (curCalls > 0) {
-                (payable(players[i])).transfer(initHostCut * curCalls);    
+                (payable(players[i])).transfer(callerBaseCut * curCalls);    
                 allCalls += curCalls;
             }
         }
@@ -203,7 +204,7 @@ contract BingoEECE571G {
         for (uint i = 0; i < winnerStrikes.length; i++) {
             address curWinner = games[gameID].players[i];
             uint curWinnerStrikeCount = winnerStrikes[i];
-            uint curWinnerCut = poolSplitable * (curWinnerStrikeCount / totalStrikes);
+            uint curWinnerCut = (poolSplitable * curWinnerStrikeCount) / totalStrikes;
             (payable(curWinner)).transfer(curWinnerCut);
         }
     }

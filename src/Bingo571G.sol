@@ -192,7 +192,7 @@ contract BingoEECE571G {
         for (uint i = 0; i < players.length; i++) {
             uint curCalls = games[gameID].caller_players[players[i]];
             if (curCalls > 0) {
-                (payable(players[i])).transfer(initHostCut * curCalls);    
+                (payable(players[i])).transfer(callerBaseCut * curCalls);    
                 allCalls += curCalls;
             }
         }

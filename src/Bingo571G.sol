@@ -26,10 +26,10 @@ pragma solidity ^0.8.13;
     }
 
 contract BingoEECE571G {
-
-    address payable public constant dev_address = payable(address(0x100)); // TODO: change before deployment
+    address payable public constant dev_address = payable(address(0xB8B97b070C78c9dfc6a6BA03DfCA805E676BF725)); 
     mapping(uint => Game) public games; // indexed by game IDs
     mapping(address => uint[]) public player_games; // allows players to find the game IDs of their active games (can remove later if too gas intensive)
+    mapping (address => uint[]) public host_games;
     uint public num_games;
 
     modifier gameExists(uint game_id) {
@@ -78,6 +78,7 @@ contract BingoEECE571G {
         games[num_games].has_completed = false;
         games[num_games].pool_value = msg.value;
         games[num_games].is_valid = true;
+        host_games[msg.sender].push(num_games);
         return num_games;
     }
 

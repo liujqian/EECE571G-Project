@@ -58,6 +58,21 @@ contract BingoEECE571GTest is Test {
         vm.deal(address300, 10 ether);            
     }
 
+    function _testSetDev() public {
+        assertEq(bingo.dev_address(), address(0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84));
+        vm.expectRevert("Only the dev can change addresses");
+        vm.prank(address300);
+        bingo.setDevAddress(address100);
+        bingo.setDevAddress(address100);
+        assertEq(bingo.dev_address(), address100);
+        vm.expectRevert("Only the dev can change addresses");
+        bingo.setDevAddress(address100);
+        vm.prank(address100);
+        bingo.setDevAddress(address200);
+        assertEq(bingo.dev_address(), address100);
+    }
+
+
     function test_setGameNumbers() public {
         bingo.createGame{value: 0.3 ether}(0.1 ether, 10**5, present_time + 1 days, 1 hours);
         drawn_numbers = [0, 79, 25];

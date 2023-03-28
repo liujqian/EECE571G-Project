@@ -27,10 +27,19 @@ pragma solidity ^0.8.13;
 
 contract BingoEECE571G {
 
-    address payable public constant dev_address = payable(address(0x100)); // TODO: change before deployment
+    address payable public dev_address;
     mapping(uint => Game) public games; // indexed by game IDs
     mapping(address => uint[]) public player_games; // allows players to find the game IDs of their active games (can remove later if too gas intensive)
     uint public num_games;
+
+    constructor() {
+        dev_address = payable(msg.sender);
+    }
+
+    function setDevAddress(address _newAddress) public {
+        require(msg.sender == dev_address, "Only the dev can change addresses");
+        dev_address = payable(_newAddress);
+    }
 
     modifier gameExists(uint game_id) {
         require(games[game_id].start_time > 0 && game_id > 0, "Game doesn't exist!");

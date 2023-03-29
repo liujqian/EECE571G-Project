@@ -1,6 +1,30 @@
 const Web3 = require("web3");
 const infuraKey = process.env.REACT_APP_INFURA_KEY;
-const web3 = new Web3("https://polygon-mumbai.infura.io/v3/"+infuraKey);
+const web3 = new Web3("https://polygon-mumbai.infura.io/v3/" + infuraKey);
+
+export function addWalletListener(callback) {
+    window.ethereum.on(
+        "accountsChanged",
+        callback
+    );
+    window.ethereum.on(
+        "disconnect",
+        callback
+    );
+}
+
+export function removeWalletListener(callback){
+    window.ethereum.removeListener('accountsChanged', callback);
+    window.ethereum.removeListener('disconnect', callback);
+}
+
+export function isMetaMaskPresent() {
+    if (window.ethereum) {
+        return true;
+    }
+    return false;
+}
+
 export const connectWallet = async () => {
     if (window.ethereum) {
         try {
@@ -35,12 +59,12 @@ export const getCurrentWalletConnected = async () => {
             if (addressArray.length > 0) {
                 return {
                     address: addressArray[0],
-                    status: "👆🏽 input the transfer to addresst in the text-field above.",
+                    status: "👆Successful.",
                 };
             } else {
                 return {
                     address: "",
-                    status: "🦊 Connect to Metamask using the top right button.",
+                    status: "🦊 Connect to Metamask.",
                 };
             }
         } catch (err) {
@@ -52,18 +76,7 @@ export const getCurrentWalletConnected = async () => {
     } else {
         return {
             address: "",
-            status: (
-                <span>
-                    <p>
-                        {" "}
-                        🦊{" "}
-                        <a target="_blank" href={`https://metamask.io/download.html`}>
-        You must install Metamask, a virtual Ethereum wallet, in your
-        browser.
-        </a>
-        </p>
-        </span>
-            ),
+            status: "You must install metamask.",
         };
     }
 };

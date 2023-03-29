@@ -107,14 +107,13 @@ export function Home(homePrompt: HomePrompt): JSX.Element {
                             }}>
                                 <Button style={{width: 300}} onClick={homePrompt.goToDashboard}>Start the Games
                                     Now!</Button>
-                                <a style={{
-                                    height: "fit-content",
-                                    width: "fit-content",
-                                }
-                                }
-                                   href={"https://docs.google.com/document/d/1KUvHDENApX49oxbEY4w-Lym_JJYVF-njBc8Nr1YmvZc/edit?usp=sharing"}><Button
-                                    style={{width: 300}}>Read
-                                    the Whitepaper</Button></a>
+                                <Button
+                                    style={{width: 300}} onClick={
+                                    () => {
+                                        window.location.href = "https://docs.google.com/document/d/1KUvHDENApX49oxbEY4w-Lym_JJYVF-njBc8Nr1YmvZc/edit?usp=sharing";
+                                    }
+                                }>Read
+                                    the Whitepaper</Button>
                             </div>
                         </Col>
                     </Row>
@@ -158,12 +157,16 @@ export function Home(homePrompt: HomePrompt): JSX.Element {
                         <div style={{textAlign: "left", marginLeft: "36px"}}><p>
                             About the developers
                             <br/><br/>
-                            The Bingo571G game is developed by four brilliant students, Jingqian Liu, Taha Shabani,
-                            Rahul Ramjuttun, and Andrew Musgrave, while taking the course "EECE 571G Blockchain Software
+                            The Bingo571G game is developed by four brilliant students, Jingqian
+                            Liu, Taha Shabani,
+                            Rahul Ramjuttun, and Andrew Musgrave, while taking the course "EECE 571G
+                            Blockchain Software
                             Engineering."
                             <br/><br/>
-                            Currently Jingqian and Rahul are Master of Engineering students in the ECE
-                            department of UBC. Taha and Andrew are Master of Applied Science students in the ECE
+                            Currently Jingqian and Rahul are Master of Engineering students in the
+                            ECE
+                            department of UBC. Taha and Andrew are Master of Applied Science
+                            students in the ECE
                             department of UBC.
                         </p></div>
                     </Col>
@@ -171,7 +174,8 @@ export function Home(homePrompt: HomePrompt): JSX.Element {
                         <div style={{textAlign: "left", marginLeft: "36px"}}><p>
                             Contact us
                             <br/><br/>
-                            If you have any questions about the game or if you have any feedback or suggestions to make
+                            If you have any questions about the game or if you have any feedback or
+                            suggestions to make
                             the game better, please contact the development team via email:
                             <a href="mailto:liujqian@students.ubc.ca"> liujqian@students.ubc.ca</a>
                         </p></div>

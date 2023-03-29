@@ -33,6 +33,10 @@ contract BingoEECE571G {
     mapping (address => uint[]) public host_games;
     uint public num_games;
 
+    event GameCreation(uint game_id, address host_address, uint host_fee, uint card_price, uint start_time, uint turn_time, uint pool_value);
+    event NumberDraw(uint game_id, uint number);
+    event CardPurchase(uint game_id, address player, uint[25] numbers);
+
     constructor() {
         dev_address = payable(msg.sender);
     }
@@ -89,6 +93,8 @@ contract BingoEECE571G {
         games[num_games].pool_value = msg.value;
         games[num_games].is_valid = true;
         host_games[msg.sender].push(num_games);
+
+        emit GameCreation(num_games, msg.sender, _host_fee, _card_price, _start_time, _turn_time, msg.value);
         return num_games;
     }
 
@@ -133,6 +139,7 @@ contract BingoEECE571G {
         
 
         games[game_id].pool_value += msg.value;
+        emit CardPurchase(game_id, msg.sender, _numbers);
     }
 
     function _cardNumbersUnique(uint[25] memory numbers) public pure returns(bool){
@@ -148,7 +155,7 @@ contract BingoEECE571G {
         return true;
     }
 
-    // Draws next number for game with host address msg.sender, if it has been long enough since last draw
+    // Draws next number for game if it has been long enough since last draw
     function drawNumber(uint gameID) public gameExists(gameID) validInterval(gameID) hostOrPlayersCall(gameID, msg.sender) {
         uint intervalsPassed = (block.timestamp - games[gameID].start_time) / games[gameID].turn_time + 1;
         uint numbersToDrawn = intervalsPassed - (games[gameID].numbers_drawn.length-1);
@@ -159,6 +166,7 @@ contract BingoEECE571G {
         for (uint i = 0; i < numbersToDrawn; i++) {
             uint randNumber = drawRandomNumber(gameID, 0, 100);
             games[gameID].numbers_drawn.push(randNumber);
+            emit NumberDraw(gameID, randNumber);
         }
         checkEndOfGame(gameID);
     }
@@ -295,8 +303,9 @@ contract BingoEECE571G {
     function checkGameStatus(uint gameID)
     public
     view
-    returns (uint cardPrice, uint startTime, uint hostFee, uint turnTime, bool hasCompleted, uint poolValue, uint[] memory numbersDrawn){
+    returns (address hostAddress, uint cardPrice, uint startTime, uint hostFee, uint turnTime, bool hasCompleted, uint poolValue, uint[] memory numbersDrawn){
         Game storage g = games[gameID];
+        hostAddress = g.host_address;
         cardPrice = g.card_price;
         startTime = g.start_time;
         hostFee = g.host_fee;

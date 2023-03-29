@@ -77,7 +77,7 @@ contract BingoEECE571GTest is Test {
         drawn_numbers = [0, 79, 25];
         bingo._setGameNumbers(1, drawn_numbers);
         uint[] memory numbers_back;
-        ( , , , , , , numbers_back) = bingo.checkGameStatus(1);
+        ( , , , , , , , numbers_back) = bingo.checkGameStatus(1);
         assert(numbers_back[1] == 79);
     }
     
@@ -283,7 +283,7 @@ contract BingoEECE571GTest is Test {
         bingo.drawNumber(1);
 
         bool hasCompleted;
-        (, , , , hasCompleted, , ) = bingo.checkGameStatus(1);
+        (, , , , , hasCompleted, , ) = bingo.checkGameStatus(1);
         assertTrue(hasCompleted);
 
         card_numbers[1] = 9;
@@ -441,7 +441,7 @@ contract BingoEECE571GTest is Test {
         bingo.drawNumber(1);    // should draw 75 resulting in a bingo
         assertEq(bingo.checkCard(1, address200, 0), 1); // passes, bingo did indeed happen
 
-        (, , hostFee, , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
+        ( , , , hostFee, , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
         assertTrue(hasCompleted);
 
         uint hostCut = (poolValue*hostFee / 1 ether);
@@ -493,7 +493,7 @@ contract BingoEECE571GTest is Test {
         assertEq(bingo.checkCard(1, address200, 0), 1);
         assertEq(bingo.checkCard(1, address300, 0), 1);
 
-        (, , hostFee, , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
+        ( , , , hostFee, , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
         assertTrue(hasCompleted);
 
         uint hostCut = (poolValue*hostFee / 1 ether);
@@ -542,7 +542,7 @@ contract BingoEECE571GTest is Test {
         assertEq(bingo.checkCard(1, address200, 0), 0);
         assertEq(bingo.checkCard(1, address300, 0), 1);
 
-        (, , hostFee, , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
+        ( , , , hostFee, , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
         assertTrue(hasCompleted);
 
         uint hostCut = (poolValue*hostFee / 1 ether);
@@ -607,7 +607,7 @@ contract BingoEECE571GTest is Test {
         assertEq(bingo.checkCard(1, address200, 0), 1);
         assertEq(bingo.checkCard(1, address300, 0), 0);
 
-        (, , hostFee, , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
+        ( , , , hostFee, , hasCompleted, poolValue, ) = bingo.checkGameStatus(1);
         assertTrue(hasCompleted);
 
         uint hostCut = (poolValue*hostFee / 1 ether);
@@ -662,7 +662,7 @@ contract BingoEECE571GTest is Test {
 
         assertEq(bingo.checkCard(1, address200, 0), 1);
 
-        (, , , , hasCompleted, , ) = bingo.checkGameStatus(1);
+        ( , , , , , hasCompleted, , ) = bingo.checkGameStatus(1);
         assertTrue(hasCompleted);
 
         present_time += 1 hours;

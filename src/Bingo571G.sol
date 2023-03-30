@@ -30,7 +30,7 @@ contract BingoEECE571G {
     address payable public dev_address;
     mapping(uint => Game) public games; // indexed by game IDs
     mapping(address => uint[]) public player_games; // allows players to find the game IDs of their active games (can remove later if too gas intensive)
-    mapping (address => uint[]) public host_games;
+    mapping(address => uint[]) public host_games;
     uint public num_games;
 
     event GameCreation(uint game_id, address host_address, uint host_fee, uint card_price, uint start_time, uint turn_time, uint pool_value);
@@ -39,6 +39,17 @@ contract BingoEECE571G {
 
     constructor() {
         dev_address = payable(msg.sender);
+    }
+
+    function getPlayerCards(uint gameID) public view returns (Card[] memory) {
+        address sender = msg.sender;
+        Game storage game = games[gameID];
+        Card[] storage playerCards = game.player_cards[sender];
+        Card[] memory copiedCards = new Card[](playerCards.length);
+        for (uint i = 0; i < playerCards.length; i++) {
+            copiedCards[i] = playerCards[i];
+        }
+        return playerCards;
     }
 
     function setDevAddress(address _newAddress) public {
@@ -130,27 +141,27 @@ contract BingoEECE571G {
 
         games[game_id].player_cards[msg.sender].push(Card(_numbers, superblocks));
 
-        if(!_checkRepeatedNumber(player_games[msg.sender], game_id)){
+        if (!_checkRepeatedNumber(player_games[msg.sender], game_id)) {
             player_games[msg.sender].push(game_id);
         }
-        if(!_checkRepeatedAddress(games[game_id].players, msg.sender)){
+        if (!_checkRepeatedAddress(games[game_id].players, msg.sender)) {
             games[game_id].players.push(msg.sender);
         }
-        
+
 
         games[game_id].pool_value += msg.value;
         emit CardPurchase(game_id, msg.sender, _numbers);
     }
 
-    function _cardNumbersUnique(uint[25] memory numbers) public pure returns(bool){
-        for(uint row = 0; row < 5; row++) {
-            for(uint i=row*5; i<(row+1)*5; i++){
-                for(uint j = i+1; j<(row+1)*5; j++){
-                    if(numbers[i]==numbers[j] && j!=i){
+    function _cardNumbersUnique(uint[25] memory numbers) public pure returns (bool){
+        for (uint row = 0; row < 5; row++) {
+            for (uint i = row * 5; i < (row + 1) * 5; i++) {
+                for (uint j = i + 1; j < (row + 1) * 5; j++) {
+                    if (numbers[i] == numbers[j] && j != i) {
                         return false;
                     }
                 }
-            }   
+            }
         }
         return true;
     }
@@ -158,7 +169,7 @@ contract BingoEECE571G {
     // Draws next number for game if it has been long enough since last draw
     function drawNumber(uint gameID) public gameExists(gameID) validInterval(gameID) hostOrPlayersCall(gameID, msg.sender) {
         uint intervalsPassed = (block.timestamp - games[gameID].start_time) / games[gameID].turn_time + 1;
-        uint numbersToDrawn = intervalsPassed - (games[gameID].numbers_drawn.length-1);
+        uint numbersToDrawn = intervalsPassed - (games[gameID].numbers_drawn.length - 1);
 
         if (msg.sender != games[gameID].host_address)
             games[gameID].caller_players[msg.sender] += numbersToDrawn;
@@ -204,15 +215,16 @@ contract BingoEECE571G {
         // only a ratio, not the real cut that the host should get.
 
         //ToDo: Decide whether hostFee is a percentage, i.e., (between 0 and 100) or a fraction of Ether
-        uint initHostCut = (poolSize * hostFee / 1 ether); //hostFee: fraction of Ether
+        uint initHostCut = (poolSize * hostFee / 1 ether);
+        //hostFee: fraction of Ether
         // uint initHostCut = (poolSize * (hostFee * 1 ether / 100)); //hostFee: percentange
-        
+
         uint callerBaseCut = initHostCut / 100;
         uint allCalls = 0;
         for (uint i = 0; i < players.length; i++) {
             uint curCalls = games[gameID].caller_players[players[i]];
             if (curCalls > 0) {
-                (payable(players[i])).transfer(callerBaseCut * curCalls);    
+                (payable(players[i])).transfer(callerBaseCut * curCalls);
                 allCalls += curCalls;
             }
         }
@@ -229,7 +241,7 @@ contract BingoEECE571G {
     }
 
     function drawRandomNumber(uint gameID, uint start, uint end) private view returns (uint) {
-        uint i = 0; 
+        uint i = 0;
         uint random_number = uint(
             keccak256(abi.encodePacked(block.timestamp, msg.sender, i))
         ) % (end - start + 1) + start;

@@ -1,5 +1,7 @@
-Deployed to: 0x971E88E342D6EC3145afa0A2E5eEc39118fEcCDD
-Transaction hash: 0xb787eda2f834492e9b005d324548b5f3d8c327fa6068014acd5971a70ff1606a
+Deployer: 0xB8B97b070C78c9dfc6a6BA03DfCA805E676BF725
+Deployed to: 0x3b8445783EFC432A3f75bFa94eDa743295F14Bd9
+Transaction hash: 0xbedebab71f45d493e3565fd34d8fc165bee3d230f93062803c3ef8f143938039
+
 
 To deploy:
     export RPC_URL=<URL from infura/alchemy>
@@ -11,5 +13,9 @@ To test deployment:
     cast call $CONTRACT_ADDRESS "dev_address()" --rpc-url $RPC_URL
 
 To verify:
-    export API_KEY=<API Key from polygonscan>
-    forge verify-contract --verifier-url https://api-testnet.polygonscan.com/api/ $CONTRACT_ADDRESS src/Bingo571G.sol:BingoEECE571G $API_KEY
+    export ETHERSCAN_API_KEY=<API Key from polygonscan>
+    forge verify-contract --verifier-url https://api-testnet.polygonscan.com/api/ $CONTRACT_ADDRESS src/Bingo571G.sol:BingoEECE571G
+
+sample card: [1,2,3,4,5,21,22,23,24,25,41,42,0,44,45,61,62,64,63,65,85,81,82,93,84]
+start time: 2680145533
+1 wei: 0.000000000000000001 eth

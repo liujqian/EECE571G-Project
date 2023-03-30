@@ -41,8 +41,8 @@ contract BingoEECE571G {
         dev_address = payable(msg.sender);
     }
 
-    function getPlayerCards(uint gameID) public view returns (Card[] memory) {
-        address sender = msg.sender;
+    function getPlayerCards(uint gameID, address playerAddr) public view returns (Card[] memory) {
+        address sender = playerAddr;
         Game storage game = games[gameID];
         Card[] storage playerCards = game.player_cards[sender];
         Card[] memory copiedCards = new Card[](playerCards.length);

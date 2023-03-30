@@ -1,9 +1,10 @@
 import React, {useEffect, useState} from "react";
-import {Avatar, Button, Card, Layout, Menu, theme} from "antd";
+import {Avatar, Button, Card, Col, Drawer, Layout, Menu, Pagination, Row, theme} from "antd";
 import {addWalletListener, connectWallet, getCurrentWalletConnected, removeWalletListener} from "../utils/connect";
-import Web3 from "web3";
 import {UserOutlined} from "@ant-design/icons";
+import {getNumCards, getTotalGameCount} from "../utils/stubs";
 
+const {Meta} = Card;
 const {Header, Content, Footer} = Layout;
 
 export const Dashboard: React.FC = () => {
@@ -12,6 +13,7 @@ export const Dashboard: React.FC = () => {
         token: {colorBgContainer},
     } = theme.useToken();
     let [content, setContent] = useState(Login({setAddress: setAddress}));
+    let [selectedMenuKey, setSelectedMenuKey] = useState("1");
 
     function changeAccountCallback(accounts: Array<string>) {
         console.log("Account changed.");
@@ -26,8 +28,11 @@ export const Dashboard: React.FC = () => {
     useEffect(() => {
         getCurrentWalletConnected().then((wallet) => {
             if (wallet.address) {
-                setAddress(address);
-                setContent(Lobby({}));
+                setAddress(wallet.address);
+                setContent(
+                    <Lobby address={address}></Lobby>
+                );
+                setSelectedMenuKey("1");
                 addWalletListener(changeAccountCallback);
             } else {
                 setAddress("");
@@ -35,6 +40,7 @@ export const Dashboard: React.FC = () => {
             }
         });
     }, [address]);
+
     return (
         <Layout className="layout">
             <Header>
@@ -44,10 +50,26 @@ export const Dashboard: React.FC = () => {
                         theme="dark"
                         mode="horizontal"
                         defaultSelectedKeys={["1"]}
+                        selectedKeys={[selectedMenuKey]}
                         items={
                             [
-                                {key: 0, label: "My Bingo Cards"},
-                                {key: 1, label: "Game lobby",}
+                                {
+                                    key: 0, label: "My Bingo Cards", disabled: address.length == 0, onClick: () => {
+                                        setSelectedMenuKey("0");
+                                        setContent(<Cards address={address}></Cards>);
+                                    }
+                                },
+                                {
+                                    key: 1, label: "Game lobby", disabled: address.length == 0, onClick: () => {
+                                        setSelectedMenuKey("1");
+                                        setContent(<Lobby address={address}></Lobby>);
+                                    }
+                                },
+                                {
+                                    key: 3, label: "About", onClick: () => {
+                                        window.location.reload();
+                                    }
+                                }
                             ]
                         }
                         style={{float: "left", width: "20vw"}}
@@ -70,7 +92,7 @@ export const Dashboard: React.FC = () => {
     );
 };
 
-const Login = (loginProps: any) => {
+const Login: React.FC = (loginProps: any) => {
     return <Card title="Login to your wallet" bordered={true} style={{width: 300}}>
         <div style={
             {
@@ -90,17 +112,127 @@ const Login = (loginProps: any) => {
                 }
             }
             }>Connect via MetaMask</Button>
-            <Button onClick={() => {
-                window.location.href = "https://metamask.io";
-            }}>
+            <Button onClick=
+                        {
+                            () => {
+                                window.location.href = "https://metamask.io";
+                            }
+                        }
+            >
                 What is MetaMask?
             </Button>
         </div>
     </Card>;
 };
-;
-const Lobby = (loginProps: any) => {
+
+interface AddressProps {
+    address: string;
+}
+
+const Lobby: React.FC<AddressProps> = (lobbyProps: AddressProps) => {
     return <Card title="Lobby" bordered={true} style={{width: 300}}>
-        This is lobby
+
+    </Card>;
+};
+
+const Cards: React.FC<AddressProps> = (cardsProps: AddressProps) => {
+    let pageSize = 6;
+    let [page, setPage] = useState(1);
+    let [totalGameCount, setTotalGameCount] = useState(0);
+    let [drawerOpen, setDrawerOpen] = useState(false);
+    let [selectedGameID, setSelectedGameID] = useState("");
+    useEffect(
+        function () {
+            getTotalGameCount().then(
+                function (count) {
+                    setTotalGameCount(count);
+                }
+            );
+        }, [totalGameCount]
+    );
+
+    let numGameOnPage = page * pageSize > totalGameCount ? totalGameCount % pageSize : pageSize;
+    let row1: Array<JSX.Element> = [];
+    for (let i = 0; i < 3; i++) {
+        row1.push(
+            <Col key={i.toString()} span={24 / 3}>
+                {
+                    i < numGameOnPage ?
+                        <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+                            <GameIcon gameID={i.toString()} onClick={
+                                function () {
+                                    setDrawerOpen(true);
+                                }
+                            }/>
+                        </div> : <></>
+                }
+            </Col>,
+        );
+    }
+    let row2: Array<JSX.Element> = [];
+    for (let i = 3; i < 6; i++) {
+        row2.push(
+            <Col key={i.toString()} span={24 / 3}>
+                {
+                    i < numGameOnPage ?
+                        <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+                            <GameIcon gameID={i.toString()} onClick={
+                                function () {
+                                    setDrawerOpen(true);
+                                }
+                            }/>
+                        </div> : <></>
+                }
+            </Col>,
+        );
+    }
+    return <Card title="Joined Bingo Games" bordered={true} style={{width: "fit-content", height: "100%"}}>
+        <Row gutter={[64, 64]} style={{width: "75vw"}}>
+            {row1}
+            {row2}
+        </Row>
+
+        <div style={{display: "flex", flexDirection: "column", alignItems: "center", marginTop: "32px"}}>
+            <Pagination defaultCurrent={1} total={totalGameCount} pageSize={pageSize} onChange={
+                (page, pageSize) => {
+                    setPage(page);
+                }
+            }/>
+        </div>
+
+        <Drawer title="Basic Drawer" placement="right" open={drawerOpen} onClose={
+            () => {
+                setDrawerOpen(!drawerOpen);
+            }
+        }>
+            < p> Some contents...</p>
+            <p>Some contents...</p>
+        </Drawer>
+    </Card>;
+};
+
+interface BingoCardProps {
+    cardNumbers: Array<Array<number>>;
+}
+
+const BingoCard: React.FC<BingoCardProps> = (props: BingoCardProps) => {
+    return <></>;
+};
+
+interface GameIconProps {
+    gameID: string;
+    onClick: () => void,
+}
+
+const GameIcon: React.FC<GameIconProps> = function (props) {
+    return <Card
+        hoverable
+        style={{width: 240}}
+        cover={<img alt="Bingo Picture" src={require("../resources/Bingo-chips.jpg")}/>}
+        onClick={
+            props.onClick
+        }
+    >
+        <Meta title={`Game ID: ` + props.gameID}/>
     </Card>;
 };

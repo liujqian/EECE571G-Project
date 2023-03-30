@@ -1,0 +1,413 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "game_id",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[25]",
+        "name": "numbers",
+        "type": "uint256[25]"
+      }
+    ],
+    "name": "CardPurchase",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "game_id",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "host_address",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "host_fee",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "card_price",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "start_time",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "turn_time",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "pool_value",
+        "type": "uint256"
+      }
+    ],
+    "name": "GameCreation",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "game_id",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "number",
+        "type": "uint256"
+      }
+    ],
+    "name": "NumberDraw",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[25]",
+        "name": "numbers",
+        "type": "uint256[25]"
+      }
+    ],
+    "name": "_cardNumbersUnique",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "game_id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[25]",
+        "name": "_numbers",
+        "type": "uint256[25]"
+      }
+    ],
+    "name": "buyCard",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "game_id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      }
+    ],
+    "name": "checkCard",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "gameID",
+        "type": "uint256"
+      }
+    ],
+    "name": "checkGameStatus",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "hostAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "cardPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "startTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "hostFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "turnTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "hasCompleted",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "poolValue",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "numbersDrawn",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_card_price",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_host_fee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_start_time",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_turn_time",
+        "type": "uint256"
+      }
+    ],
+    "name": "createGame",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "game_id",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "dev_address",
+    "outputs": [
+      {
+        "internalType": "address payable",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "gameID",
+        "type": "uint256"
+      }
+    ],
+    "name": "drawNumber",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "games",
+    "outputs": [
+      {
+        "internalType": "address payable",
+        "name": "host_address",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "card_price",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "host_fee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "start_time",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "turn_time",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "last_draw_time",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "is_valid",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "has_completed",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pool_value",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "host_games",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "num_games",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "player_games",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_newAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setDevAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

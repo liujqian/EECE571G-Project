@@ -2,10 +2,14 @@ Deployed to: 0xA104bD0fB5F9bb87F32d56eDEaadE4c1122DE74c
 Transaction hash: 0x7408a2190650a28fb45923a03f8d6fa352d65ff9edea2e7686298b0d799e3bc4
 
 To deploy:
-    export RPC_URL=...
-    export PRIVATE_KEY=...
+    export RPC_URL=<URL from infura/alchemy>
+    export PRIVATE_KEY=<private key from metamask>
     forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY src/Bingo571G.sol:BingoEECE571G
 
 To test deployment:
     export CONTRACT_ADDRESS=<Deployed to address from create call>
     cast call $CONTRACT_ADDRESS "dev_address()" --rpc-url $RPC_URL
+
+To verify:
+    export API_KEY=<API Key from polygonscan>
+    forge verify-contract --verifier-url https://api-testnet.polygonscan.com/api/ $CONTRACT_ADDRESS src/Bingo571G.sol:BingoEECE571G $API_KEY

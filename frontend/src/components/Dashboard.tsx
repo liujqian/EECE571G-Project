@@ -1,8 +1,8 @@
-import React, {useEffect, useState} from "react";
-import {Avatar, Button, Card, Col, Drawer, Layout, Menu, Pagination, Row, theme} from "antd";
+import React, {CSSProperties, useEffect, useState} from "react";
+import {Avatar, Button, Card, Col, Descriptions, Drawer, Layout, Menu, Pagination, Row, theme} from "antd";
 import {addWalletListener, connectWallet, getCurrentWalletConnected, removeWalletListener} from "../utils/connect";
 import {UserOutlined} from "@ant-design/icons";
-import {getNumCards, getTotalGameCount} from "../utils/stubs";
+import {getCards, getGameInfo, getTotalGameCount} from "../utils/stubs";
 
 const {Meta} = Card;
 const {Header, Content, Footer} = Layout;
@@ -26,19 +26,21 @@ export const Dashboard: React.FC = () => {
     }
 
     useEffect(() => {
-        getCurrentWalletConnected().then((wallet) => {
-            if (wallet.address) {
-                setAddress(wallet.address);
-                setContent(
-                    <Lobby address={address}></Lobby>
-                );
-                setSelectedMenuKey("1");
-                addWalletListener(changeAccountCallback);
-            } else {
-                setAddress("");
-                setContent(Login({setAddress: setAddress}));
+        getCurrentWalletConnected().then(
+            (wallet) => {
+                if (wallet.address) {
+                    setAddress(wallet.address);
+                    setContent(
+                        <Lobby address={address}></Lobby>
+                    );
+                    setSelectedMenuKey("1");
+                    addWalletListener(changeAccountCallback);
+                } else {
+                    setAddress("");
+                    setContent(Login({setAddress: setAddress}));
+                }
             }
-        });
+        );
     }, [address]);
 
     return (
@@ -56,7 +58,7 @@ export const Dashboard: React.FC = () => {
                                 {
                                     key: 0, label: "My Bingo Cards", disabled: address.length == 0, onClick: () => {
                                         setSelectedMenuKey("0");
-                                        setContent(<Cards address={address}></Cards>);
+                                        setContent(<PlayerGames address={address}></PlayerGames>);
                                     }
                                 },
                                 {
@@ -135,12 +137,36 @@ const Lobby: React.FC<AddressProps> = (lobbyProps: AddressProps) => {
     </Card>;
 };
 
-const Cards: React.FC<AddressProps> = (cardsProps: AddressProps) => {
+interface Game {
+    hostAddress: string,
+    cardPrice: number,
+    startTime: number,
+    hostFee: number,
+    turnTime: number,
+    hasCompleted: boolean,
+    poolValue: number,
+    numbersDrawn: Array<number>
+}
+
+const PlayerGames: React.FC<AddressProps> = (playerGamesProps: AddressProps) => {
     let pageSize = 6;
+    let defaultGame: Game = {
+        hostAddress: "0x0",
+        cardPrice: 0,
+        startTime: 0,
+        hostFee: 0,
+        turnTime: 0,
+        hasCompleted: false,
+        poolValue: 0,
+        numbersDrawn: [0],
+    };
     let [page, setPage] = useState(1);
     let [totalGameCount, setTotalGameCount] = useState(0);
     let [drawerOpen, setDrawerOpen] = useState(false);
     let [selectedGameID, setSelectedGameID] = useState("");
+    let [game, setGame] = useState(defaultGame);
+    let [cards, setCards] = useState([] as Array<Array<number>>);
+
     useEffect(
         function () {
             getTotalGameCount().then(
@@ -149,6 +175,30 @@ const Cards: React.FC<AddressProps> = (cardsProps: AddressProps) => {
                 }
             );
         }, [totalGameCount]
+    );
+
+    useEffect(
+        function () {
+            if (selectedGameID !== "") {
+                getGameInfo(selectedGameID).then(
+                    function (game: Game) {
+                        setGame(game);
+                    }
+                );
+            }
+        }, [selectedGameID]
+    );
+
+    useEffect(
+        function () {
+            if (selectedGameID !== "") {
+                getCards(playerGamesProps.address, selectedGameID).then(
+                    function (cards: Array<Array<number>>) {
+                        setCards(cards);
+                    }
+                );
+            }
+        }, [selectedGameID]
     );
 
     let numGameOnPage = page * pageSize > totalGameCount ? totalGameCount % pageSize : pageSize;
@@ -162,6 +212,7 @@ const Cards: React.FC<AddressProps> = (cardsProps: AddressProps) => {
                             <GameIcon gameID={i.toString()} onClick={
                                 function () {
                                     setDrawerOpen(true);
+                                    setSelectedGameID(i.toString());
                                 }
                             }/>
                         </div> : <></>
@@ -179,6 +230,7 @@ const Cards: React.FC<AddressProps> = (cardsProps: AddressProps) => {
                             <GameIcon gameID={i.toString()} onClick={
                                 function () {
                                     setDrawerOpen(true);
+                                    setSelectedGameID(i.toString());
                                 }
                             }/>
                         </div> : <></>
@@ -186,6 +238,19 @@ const Cards: React.FC<AddressProps> = (cardsProps: AddressProps) => {
             </Col>,
         );
     }
+    let bingoCardComponents = cards.map(
+        function (singleCard, idx) {
+            return <BingoCard cardNumbers={singleCard}
+                              tickedNumbers={game.numbersDrawn.filter((value) => value != 100)}
+                              key={idx}
+            ></BingoCard>;
+        }
+    );
+
+    let gameStartTime = new Date(game.startTime * 1e3);
+    let gameDrawNumberInterval = game.turnTime;
+
+
     return <Card title="Joined Bingo Games" bordered={true} style={{width: "fit-content", height: "100%"}}>
         <Row gutter={[64, 64]} style={{width: "75vw"}}>
             {row1}
@@ -200,23 +265,103 @@ const Cards: React.FC<AddressProps> = (cardsProps: AddressProps) => {
             }/>
         </div>
 
-        <Drawer title="Basic Drawer" placement="right" open={drawerOpen} onClose={
+        <Drawer title={"Game " + selectedGameID} placement="right" open={drawerOpen} onClose={
             () => {
                 setDrawerOpen(!drawerOpen);
+                setGame(defaultGame);
+                setSelectedGameID("");
+                setCards([]);
             }
         }>
-            < p> Some contents...</p>
-            <p>Some contents...</p>
+            <div style={
+                {
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    height: "100%"
+                }
+            }>
+                <div>
+                    <div style={{textAlign: "center", fontSize: "1.5em", marginBottom: "16px"}}>Bingo Cards for This
+                        Game
+                    </div>
+                    <div style={{overflow: "auto", height: "45vh"}}>
+                        {bingoCardComponents}
+                    </div>
+                </div>
+                <Card title={`Game ${selectedGameID}`} style={{height: "40vh"}}>
+                    <Descriptions title="Game Infomation" column={1}>
+                        <Descriptions.Item
+                            label="Host Wallet">{game.hostAddress.substring(0, 5) + "..." + game.hostAddress.substring(game.hostAddress.length - 3, game.hostAddress.length)}</Descriptions.Item>
+                        <Descriptions.Item label="Card Price in Wei">{game.cardPrice}</Descriptions.Item>
+                        <Descriptions.Item label="Start Time">{formatTime(gameStartTime)}</Descriptions.Item>
+                        <Descriptions.Item
+                            label="Number Draw Interval in Seconds">{gameDrawNumberInterval}</Descriptions.Item>
+                        <Descriptions.Item label="Completed?"> {game.hasCompleted.toString()}</Descriptions.Item>
+                        <Descriptions.Item label="Pool Value in Wei"> {game.poolValue}</Descriptions.Item>
+                        <Descriptions.Item
+                            label="Numbers Drawn"> {game.numbersDrawn.filter((value) => value != 100).toString()}</Descriptions.Item>
+                        <Descriptions.Item
+                            label="Draw Number for the Game"> <Button>Try to Draw Numbers</Button></Descriptions.Item>
+                    </Descriptions>
+                </Card>
+            </div>
         </Drawer>
     </Card>;
 };
 
+// This utility function to format a JavaScript Date object is provided by OpenAI's ChatGPT.
+function formatTime(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+
+    return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+}
+
 interface BingoCardProps {
-    cardNumbers: Array<Array<number>>;
+    cardNumbers: Array<number>;
+    tickedNumbers: Array<number>;
+    key: number | string;
 }
 
 const BingoCard: React.FC<BingoCardProps> = (props: BingoCardProps) => {
-    return <></>;
+    let style: CSSProperties = {
+        aspectRatio: "1",
+        border: "black",
+        borderStyle: "solid",
+        width: "3px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "2em",
+    };
+    let carArr = props.cardNumbers;
+    let tickedArr = props.tickedNumbers;
+    let rows = [];
+    for (let i = 0; i < 5; i++) {
+        let cols = [];
+        for (let j = 0; j < 5; j++) {
+            let idx = i * 5 + j;
+            let col = <Col flex={1} style={
+                {
+                    ...style,
+                    backgroundColor: carArr[idx] == 0 ? "lightgreen" : tickedArr.includes(carArr[idx]) ? "yellow" : "white"
+                }
+            } key={`${j}col`}> {carArr[idx]}</Col>;
+            cols.push(col);
+        }
+        rows.push(<Row gutter={[0, 0]} key={`${i}row`}>{cols}</Row>);
+    }
+    return <>
+        <div style={{marginTop: "8px"}}>
+            {rows}
+        </div>
+    </>;
 };
 
 interface GameIconProps {

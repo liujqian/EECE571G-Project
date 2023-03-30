@@ -1,5 +1,5 @@
-Deployed to: 0xA104bD0fB5F9bb87F32d56eDEaadE4c1122DE74c
-Transaction hash: 0x7408a2190650a28fb45923a03f8d6fa352d65ff9edea2e7686298b0d799e3bc4
+Deployed to: 0x971E88E342D6EC3145afa0A2E5eEc39118fEcCDD
+Transaction hash: 0xb787eda2f834492e9b005d324548b5f3d8c327fa6068014acd5971a70ff1606a
 
 To deploy:
     export RPC_URL=<URL from infura/alchemy>

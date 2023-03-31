@@ -41,8 +41,26 @@ contract BingoEECE571G {
         dev_address = payable(msg.sender);
     }
 
-    function getPlayerCards(uint gameID, address playerAddr) public view returns (Card[] memory) {
-        address sender = playerAddr;
+    function getHostGames(address hostAddress) public view returns (uint[] memory) {
+        uint[] storage gameIDs = host_games[hostAddress];
+        uint[] memory copiedGameIDs = new uint[](gameIDs.length);
+        for (uint i = 0; i < gameIDs.length; i++) {
+            copiedGameIDs[i] = gameIDs[i];
+        }
+        return copiedGameIDs;
+    }
+
+    function getPlayerGames(address playerAddress) public view returns (uint[] memory) {
+        uint[] storage gameIDs = player_games[playerAddress];
+        uint[] memory copiedGameIDs = new uint[](gameIDs.length);
+        for (uint i = 0; i < gameIDs.length; i++) {
+            copiedGameIDs[i] = gameIDs[i];
+        }
+        return copiedGameIDs;
+    }
+
+    function getPlayerCards(uint gameID, address playerAddress) public view returns (Card[] memory) {
+        address sender = playerAddress;
         Game storage game = games[gameID];
         Card[] storage playerCards = game.player_cards[sender];
         Card[] memory copiedCards = new Card[](playerCards.length);
@@ -153,7 +171,7 @@ contract BingoEECE571G {
         emit CardPurchase(game_id, msg.sender, _numbers);
     }
 
-    function _cardNumbersUnique(uint[25] memory numbers) public pure returns (bool){
+    function _cardNumbersUnique(uint[25] memory numbers) private pure returns (bool){
         for (uint row = 0; row < 5; row++) {
             for (uint i = row * 5; i < (row + 1) * 5; i++) {
                 for (uint j = i + 1; j < (row + 1) * 5; j++) {

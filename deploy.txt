@@ -1,6 +1,6 @@
-Deployer: 0xB8B97b070C78c9dfc6a6BA03DfCA805E676BF725
-Deployed to: 0x3b8445783EFC432A3f75bFa94eDa743295F14Bd9
-Transaction hash: 0xbedebab71f45d493e3565fd34d8fc165bee3d230f93062803c3ef8f143938039
+Deployed to: 0xFd35aA5CfeaC12DBcCAF649953DE1cfE8c5943eF
+Transaction hash: 0x601a1cbe4ba7cdee23df5bf538d14813d1ac58bca0c373ae7ae0158f282fb3f1
+time: March 30 17:22
 
 
 To deploy:

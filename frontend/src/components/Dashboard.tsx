@@ -1,11 +1,26 @@
 import React, {CSSProperties, useEffect, useState} from "react";
-import {Avatar, Button, Card, Col, Descriptions, Drawer, Layout, Menu, Pagination, Row, theme} from "antd";
+import {
+    Avatar,
+    Button,
+    Card, Checkbox,
+    Col,
+    Descriptions,
+    Divider,
+    Drawer,
+    Form, Input, InputNumber,
+    Layout,
+    Menu,
+    Pagination,
+    Row,
+    theme
+} from "antd";
 import {addWalletListener, connectWallet, getCurrentWalletConnected, removeWalletListener} from "../utils/connect";
 import {UserOutlined} from "@ant-design/icons";
 import {getCards, getGameInfo, getTotalGameCount} from "../utils/stubs";
+import {Radio} from "antd";
 
 const {Meta} = Card;
-const {Header, Content, Footer} = Layout;
+const {Header, Content, Footer, Sider} = Layout;
 
 export const Dashboard: React.FC = () => {
     let [address, setAddress] = useState("");
@@ -31,7 +46,7 @@ export const Dashboard: React.FC = () => {
                 if (wallet.address) {
                     setAddress(wallet.address);
                     setContent(
-                        <Lobby address={address}></Lobby>
+                        <GamesGallery address={address} lobbyType={"allGames"}></GamesGallery>
                     );
                     setSelectedMenuKey("1");
                     addWalletListener(changeAccountCallback);
@@ -145,7 +160,7 @@ interface Game {
     numbersDrawn: Array<number>
 }
 
-const GamesGallery: React.FC<GamesLobbyProps> = (playerGamesProps: GamesLobbyProps) => {
+const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProps) => {
     let pageSize = 6;
     let defaultGame: Game = {
         hostAddress: "0x0",
@@ -159,10 +174,24 @@ const GamesGallery: React.FC<GamesLobbyProps> = (playerGamesProps: GamesLobbyPro
     };
     let [page, setPage] = useState(1);
     let [totalGameCount, setTotalGameCount] = useState(0);
-    let [drawerOpen, setDrawerOpen] = useState(false);
+    let [joinedGameDrawerOpen, setJoinedGameDrawerOpen] = useState(false);
     let [selectedGameID, setSelectedGameID] = useState("");
     let [game, setGame] = useState(defaultGame);
     let [cards, setCards] = useState([] as Array<Array<number>>);
+    let [gameFilter, setGameFilter] = useState(() => true);
+    let [generalGameDrawerOpen, setGeneralGameDrawerOpen] = useState(false);
+    let [buyingCards, setBuyingCards] = useState(false);
+    let [selectedNumbers, setSelectedNumbers] = useState([] as Array<number>);
+    let [createGameDrawerOpen, setCreateGameDrawerOpen] = useState(false);
+    let [createGameFor, setCreateGameForm] = useState({});
+    let numberSelectCallback = function (changedValue: any, values: any) {
+        let nums = [];
+        for (let i = 0; i < 25; i++) {
+            nums.push(values[i]);
+        }
+        setSelectedNumbers(nums);
+    };
+    let [numberInputForm, setNumberInputForm] = useState(<BingoCardEditable onFormChanged={numberSelectCallback}/>);
 
     useEffect(
         function () {
@@ -189,7 +218,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (playerGamesProps: GamesLobbyPro
     useEffect(
         function () {
             if (selectedGameID !== "") {
-                getCards(playerGamesProps.address, selectedGameID).then(
+                getCards(gamesLobbyProps.address, selectedGameID).then(
                     function (cards: Array<Array<number>>) {
                         setCards(cards);
                     }
@@ -208,7 +237,11 @@ const GamesGallery: React.FC<GamesLobbyProps> = (playerGamesProps: GamesLobbyPro
                         <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
                             <GameIcon gameID={i.toString()} onClick={
                                 function () {
-                                    setDrawerOpen(true);
+                                    if (gamesLobbyProps.lobbyType == "joinedGames") {
+                                        setJoinedGameDrawerOpen(true);
+                                    } else {
+                                        setGeneralGameDrawerOpen(true);
+                                    }
                                     setSelectedGameID(i.toString());
                                 }
                             }/>
@@ -226,7 +259,11 @@ const GamesGallery: React.FC<GamesLobbyProps> = (playerGamesProps: GamesLobbyPro
                         <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
                             <GameIcon gameID={i.toString()} onClick={
                                 function () {
-                                    setDrawerOpen(true);
+                                    if (gamesLobbyProps.lobbyType == "joinedGames") {
+                                        setJoinedGameDrawerOpen(true);
+                                    } else {
+                                        setGeneralGameDrawerOpen(true);
+                                    }
                                     setSelectedGameID(i.toString());
                                 }
                             }/>
@@ -247,64 +284,309 @@ const GamesGallery: React.FC<GamesLobbyProps> = (playerGamesProps: GamesLobbyPro
     let gameStartTime = new Date(game.startTime * 1e3);
     let gameDrawNumberInterval = game.turnTime;
 
+    let title = gamesLobbyProps.lobbyType == "joinedGames" ? "Joined Bingo Games" : "All Bingo Games";
+    let onDrawerClose = () => {
+        setJoinedGameDrawerOpen(false);
+        setGeneralGameDrawerOpen(false);
+        setGame(defaultGame);
+        setSelectedGameID("");
+        setCards([]);
+        setNumberInputForm(<BingoCardEditable onFormChanged={numberSelectCallback}/>);
+        setCreateGameForm({});
+    };
 
-    return <Card title="Joined Bingo Games" bordered={true} style={{width: "fit-content", height: "100%"}}>
-        <Row gutter={[64, 64]} style={{width: "75vw"}}>
-            {row1}
-            {row2}
-        </Row>
+    let joinedGameFilterRadio = <Radio.Group defaultValue="a" buttonStyle="solid" style={{
+        display: "flex",
+        width: "100%",
+        flexDirection: "column",
+        alignItems: "center"
+    }}>
+        <Radio.Button value="a">
+            <div style={{width: "90px", textAlign: "center"}}>All</div>
+        </Radio.Button>
+        <Radio.Button value="b">
+            <div style={{width: "90px", textAlign: "center"}}>Finished</div>
+        </Radio.Button>
+        <Radio.Button value="c">
+            <div style={{width: "90px", textAlign: "center"}}>Unfinished</div>
+        </Radio.Button>
+    </Radio.Group>;
+    let allGameFilterRadio = <Radio.Group defaultValue="d" buttonStyle="solid" style={{
+        display: "flex",
+        width: "100%",
+        flexDirection: "column",
+        alignItems: "center"
+    }}>
+        <Radio.Button value="d">
+            <div style={{width: "90px", textAlign: "center"}}>All</div>
+        </Radio.Button>
+        <Radio.Button value="e">
+            <div style={{width: "90px", textAlign: "center"}}>Started</div>
+        </Radio.Button>
+        <Radio.Button value="f">
+            <div style={{width: "90px", textAlign: "center"}}>Unstarted</div>
+        </Radio.Button>
+        <Radio.Button value="f">
+            <div style={{width: "90px", textAlign: "center"}}>Hosted By Me</div>
+        </Radio.Button>
+    </Radio.Group>;
 
-        <div style={{display: "flex", flexDirection: "column", alignItems: "center", marginTop: "32px"}}>
-            <Pagination defaultCurrent={1} total={totalGameCount} pageSize={pageSize} onChange={
-                (page, pageSize) => {
-                    setPage(page);
-                }
-            }/>
-        </div>
+    const {
+        token: {colorBgContainer, borderRadius, colorBorder,},
+    } = theme.useToken();
 
-        <Drawer title={"Game " + selectedGameID} placement="right" open={drawerOpen} onClose={
-            () => {
-                setDrawerOpen(!drawerOpen);
-                setGame(defaultGame);
-                setSelectedGameID("");
-                setCards([]);
-            }
-        }>
-            <div style={
-                {
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    height: "100%"
-                }
-            }>
-                <div>
-                    <div style={{textAlign: "center", fontSize: "1.5em", marginBottom: "16px"}}>Bingo Cards for This
-                        Game
+    return (
+        <div>
+            <Layout>
+                <Sider style={{
+                    background: colorBgContainer,
+                    borderRadius: borderRadius,
+                    borderColor: colorBorder,
+                    borderStyle: "solid"
+                }}>
+                    <div
+                        style={{textAlign: "center", marginTop: "16px", marginBottom: "16px", fontSize: "1.5em"}}>Filter
                     </div>
-                    <div style={{overflow: "auto", height: "45vh"}}>
-                        {bingoCardComponents}
+                    <div style={{display: "flex", flexDirection: "column", alignItems: "center", width: "100%"}}>
+                        {gamesLobbyProps.lobbyType == "joinedGames" ? joinedGameFilterRadio : allGameFilterRadio}
                     </div>
+                </Sider>
+                <div style={{alignItems: "self-start"}}>
+                    <Card title={title} bordered={true} style={{width: "fit-content", height: "100%"}}>
+                        {
+                            gamesLobbyProps.lobbyType == "allGames" &&
+                            <>
+                                <div style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "end",
+                                    marginTop: "24px",
+                                    marginBottom: "24px"
+                                }}>
+                                    <Button onClick={() => {
+                                        setCreateGameDrawerOpen(true);
+                                    }}> Create a New Game </Button>
+                                </div>
+                                <Divider/>
+                            </>
+                        }
+
+                        <Row gutter={[64, 64]} style={{width: "75vw"}}>
+                            {row1}
+                            {row2}
+                        </Row>
+                        <div
+                            style={{display: "flex", flexDirection: "column", alignItems: "center", marginTop: "32px"}}>
+                            <Pagination defaultCurrent={1} total={totalGameCount} pageSize={pageSize} onChange={
+                                (page, pageSize) => {
+                                    setPage(page);
+                                }
+                            }/>
+                        </div>
+
+                        {/*Lobby game drawer*/}
+                        <Drawer title={"Game " + selectedGameID} placement="right" open={generalGameDrawerOpen}
+                                onClose={onDrawerClose}>
+                            <div style={
+                                {
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    justifyContent: "space-between",
+                                    height: "100%"
+                                }
+                            }>
+                                {
+                                    buyingCards &&
+                                    <div>
+                                        <div style={
+                                            {
+                                                textAlign: "center",
+                                                fontSize: "1.5em",
+                                                marginBottom: "16px",
+                                            }
+                                        }>Select a Card
+                                        </div>
+                                        <div style={{overflow: "auto", height: "35vh"}}>
+                                            {numberInputForm}
+                                        </div>
+                                        <div style={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "center"
+                                        }}>
+                                            <Button onClick={
+                                                () => {
+                                                    let randCard = generateRandomCard();
+                                                    setNumberInputForm(
+                                                        <BingoCardEditable onFormChanged={numberSelectCallback}
+                                                                           cardNumbers={randCard}/>
+                                                    );
+                                                    setSelectedNumbers(randCard);
+                                                }
+                                            }>Generate Random Numbers
+                                            </Button>
+                                        </div>
+                                    </div>
+                                }
+                                <Card title={`Game ${selectedGameID}`} style={{height: "fit-content"}}>
+                                    <Descriptions title="Game Infomation" column={1}>
+                                        <Descriptions.Item
+                                            label="Host Wallet">{game.hostAddress.substring(0, 5) + "..." + game.hostAddress.substring(game.hostAddress.length - 3, game.hostAddress.length)}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Card Price in Wei">{game.cardPrice}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Start Time">{formatTime(gameStartTime)}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Number Draw Interval in Seconds">{gameDrawNumberInterval}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Completed?"> {game.hasCompleted.toString()}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Pool Value in Wei"> {game.poolValue}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Numbers Drawn"> {game.numbersDrawn.filter((value) => value != 100).toString()}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Draw Number for the Game">
+                                            <Button disabled={game.startTime * 1e3 > Date.now()}>
+                                                Try to Draw
+                                                Numbers
+                                            </Button>
+                                        </Descriptions.Item>
+                                    </Descriptions>
+                                    <div style={{
+                                        alignItems: "center",
+                                        display: "flex",
+                                        flexDirection: "column"
+                                    }}>
+                                        {
+                                            !buyingCards ?
+                                                <Button disabled={game.startTime > Date.now()} onClick={
+                                                    () => {
+                                                        setBuyingCards(true);
+                                                    }
+                                                }>
+                                                    Buy a Bingo Card for this Game
+                                                </Button>
+                                                :
+                                                <div style={{
+                                                    justifyContent: "space-around",
+                                                    display: "flex",
+                                                    flexDirection: "row",
+                                                    width: "100%"
+                                                }}>
+                                                    <Button onClick={
+                                                        () => {
+                                                            setBuyingCards(false);
+                                                        }
+                                                    }>
+                                                        Confirm
+                                                    </Button>
+                                                    <Button onClick={
+                                                        () => {
+                                                            setBuyingCards(false);
+                                                        }
+                                                    }>
+                                                        Cancle
+                                                    </Button>
+                                                </div>
+                                        }
+                                    </div>
+                                </Card>
+                            </div>
+                        </Drawer>
+
+                        {/*Create game drawer*/}
+                        <Drawer title={"Create a Game"} placement="right" open={createGameDrawerOpen}
+                                onClose={onDrawerClose}>
+                            <div style={
+                                {
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    justifyContent: "space-between",
+                                    height: "100%"
+                                }
+                            }>
+                                <Card title={`New Game`} style={{height: "fit-content"}}>
+                                    <Form onValuesChange={
+                                        function (changedValues: any, values: any) {
+                                            setCreateGameForm(values);
+                                        }
+                                    }>
+                                        < Form.Item name={"cardPrice"} label={"Bingo card price in Wei"}>
+                                            <InputNumber/>
+                                        </Form.Item>
+                                        <Form.Item name={"hostFee"} label={"Host fee in percentage (0-100)"}>
+                                            <InputNumber/>
+                                        </Form.Item>
+                                        <Form.Item name={"startTime"} label={"Game start time (hh:mm:ss)"}>
+                                            <Input/>
+                                        </Form.Item>
+                                        <Form.Item name={"startDate"} label={"Game start date (yyyy:mm:dd)"}>
+                                            <Input/>
+                                        </Form.Item>
+                                        <Form.Item name={"turnTime"} label={"Number draw interval in seconds"}>
+                                            <InputNumber/>
+                                        </Form.Item>
+                                    </Form>
+                                    <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+                                        <Button>Confirm New Game</Button>
+                                    </div>
+                                </Card>
+                            </div>
+                        </Drawer>
+
+                        {/* Joined game drawer*/}
+                        <Drawer title={"Game " + selectedGameID} placement="right"
+                                open={joinedGameDrawerOpen}
+                                onClose={onDrawerClose}>
+                            <div style={
+                                {
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    justifyContent: "space-between",
+                                    height: "100%"
+                                }
+                            }>
+                                <div>
+                                    <div style={{
+                                        textAlign: "center",
+                                        fontSize: "1.5em",
+                                        marginBottom: "16px"
+                                    }}>Bingo Cards for This Game
+                                    </div>
+                                    <div style={{overflow: "auto", height: "45vh"}}>
+                                        {bingoCardComponents}
+                                    </div>
+                                </div>
+                                <Card title={`Game ${selectedGameID}`} style={{height: "40vh"}}>
+                                    <Descriptions title="Game Infomation" column={1}>
+                                        <Descriptions.Item
+                                            label="Host Wallet">{game.hostAddress.substring(0, 5) + "..." + game.hostAddress.substring(game.hostAddress.length - 3, game.hostAddress.length)}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Card Price in Wei">{game.cardPrice}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Start Time">{formatTime(gameStartTime)}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Number Draw Interval in Seconds">{gameDrawNumberInterval}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Completed?"> {game.hasCompleted.toString()}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Pool Value in Wei"> {game.poolValue}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Numbers Drawn"> {game.numbersDrawn.filter((value) => value != 100).toString()}</Descriptions.Item>
+                                        <Descriptions.Item
+                                            label="Draw Number for the Game"> <Button
+                                            disabled={game.startTime * 1e3 > Date.now()}>Try to Draw
+                                            Numbers</Button></Descriptions.Item>
+                                    </Descriptions>
+                                </Card>
+                            </div>
+                        </Drawer>
+                    </Card>
                 </div>
-                <Card title={`Game ${selectedGameID}`} style={{height: "40vh"}}>
-                    <Descriptions title="Game Infomation" column={1}>
-                        <Descriptions.Item
-                            label="Host Wallet">{game.hostAddress.substring(0, 5) + "..." + game.hostAddress.substring(game.hostAddress.length - 3, game.hostAddress.length)}</Descriptions.Item>
-                        <Descriptions.Item label="Card Price in Wei">{game.cardPrice}</Descriptions.Item>
-                        <Descriptions.Item label="Start Time">{formatTime(gameStartTime)}</Descriptions.Item>
-                        <Descriptions.Item
-                            label="Number Draw Interval in Seconds">{gameDrawNumberInterval}</Descriptions.Item>
-                        <Descriptions.Item label="Completed?"> {game.hasCompleted.toString()}</Descriptions.Item>
-                        <Descriptions.Item label="Pool Value in Wei"> {game.poolValue}</Descriptions.Item>
-                        <Descriptions.Item
-                            label="Numbers Drawn"> {game.numbersDrawn.filter((value) => value != 100).toString()}</Descriptions.Item>
-                        <Descriptions.Item
-                            label="Draw Number for the Game"> <Button>Try to Draw Numbers</Button></Descriptions.Item>
-                    </Descriptions>
-                </Card>
-            </div>
-        </Drawer>
-    </Card>;
+            </Layout>
+        </div>
+    )
+        ;
 };
 
 // This utility function to format a JavaScript Date object is provided by OpenAI's ChatGPT.
@@ -325,6 +607,73 @@ interface BingoCardProps {
     key: number | string;
 }
 
+interface BingoCardEditableProps {
+    onFormChanged: (changedValue: any, values: any) => void,
+    cardNumbers?: Array<number>;
+}
+
+function generateRandomCard(): Array<number> {
+    let ranges = [[1, 19], [20, 39], [40, 59], [60, 79], [80, 99]];
+    let nums = [];
+    let generated: any = {};
+    for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 5; j++) {
+            let randNum = getRandomInt(ranges[i][0], ranges[i][1]);
+            while (randNum in generated) {
+                randNum = getRandomInt(ranges[i][0], ranges[i][1]);
+            }
+            nums.push(randNum);
+        }
+    }
+    return nums;
+}
+
+function getRandomInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+const BingoCardEditable = (props: BingoCardEditableProps) => {
+    let style: CSSProperties = {
+        aspectRatio: "1",
+        border: "black",
+        borderStyle: "solid",
+        width: "3px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "2em",
+    };
+    let rows = [];
+    for (let i = 0; i < 5; i++) {
+        let cols = [];
+        for (let j = 0; j < 5; j++) {
+            let idx = j * 5 + i;
+            let col = <Col flex={1} style={style} key={`${j}col`}>
+                <Form.Item name={idx.toString()} rules={[]} style={{margin: 0}}>
+                    <div style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        justifyContent: "space-evenly",
+                        height: "100%",
+                        alignItems: "center"
+                    }}>
+                        {props.cardNumbers ? <Input value={props.cardNumbers[idx]}></Input> : <Input></Input>}
+                    </div>
+                </Form.Item>
+            </Col>;
+            cols.push(col);
+        }
+        rows.push(<Row gutter={[0, 0]} key={`${i}row`}>{cols}</Row>);
+    }
+    return <Form onValuesChange={
+        props.onFormChanged
+    }>
+        {rows}
+    </Form>;
+
+};
+
 const BingoCard: React.FC<BingoCardProps> = (props: BingoCardProps) => {
     let style: CSSProperties = {
         aspectRatio: "1",
@@ -343,7 +692,7 @@ const BingoCard: React.FC<BingoCardProps> = (props: BingoCardProps) => {
     for (let i = 0; i < 5; i++) {
         let cols = [];
         for (let j = 0; j < 5; j++) {
-            let idx = i * 5 + j;
+            let idx = j * 5 + i;
             let col = <Col flex={1} style={
                 {
                     ...style,

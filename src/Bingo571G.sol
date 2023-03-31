@@ -41,6 +41,10 @@ contract BingoEECE571G {
         dev_address = payable(msg.sender);
     }
 
+    function getPlayerGamesCount(address playerAddress) public view returns (uint){return player_games[playerAddress].length;}
+
+    function getHostGamesCount(address hostAddress) public view returns (uint){return host_games[hostAddress].length;}
+
     function getHostGames(address hostAddress) public view returns (uint[] memory) {
         uint[] storage gameIDs = host_games[hostAddress];
         uint[] memory copiedGameIDs = new uint[](gameIDs.length);

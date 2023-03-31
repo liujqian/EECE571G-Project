@@ -56,15 +56,17 @@ export const Dashboard: React.FC = () => {
                         items={
                             [
                                 {
-                                    key: 0, label: "My Bingo Cards", disabled: address.length == 0, onClick: () => {
+                                    key: 0, label: "My Bingo Games", disabled: address.length == 0, onClick: () => {
                                         setSelectedMenuKey("0");
-                                        setContent(<PlayerGames address={address}></PlayerGames>);
+                                        setContent(<GamesGallery address={address}
+                                                                 lobbyType={"joinedGames"}></GamesGallery>);
                                     }
                                 },
                                 {
                                     key: 1, label: "Game lobby", disabled: address.length == 0, onClick: () => {
                                         setSelectedMenuKey("1");
-                                        setContent(<Lobby address={address}></Lobby>);
+                                        setContent(<GamesGallery address={address}
+                                                                 lobbyType={"allGames"}></GamesGallery>);
                                     }
                                 },
                                 {
@@ -127,15 +129,10 @@ const Login: React.FC = (loginProps: any) => {
     </Card>;
 };
 
-interface AddressProps {
+interface GamesLobbyProps {
     address: string;
+    lobbyType: "allGames" | "joinedGames";
 }
-
-const Lobby: React.FC<AddressProps> = (lobbyProps: AddressProps) => {
-    return <Card title="Lobby" bordered={true} style={{width: 300}}>
-
-    </Card>;
-};
 
 interface Game {
     hostAddress: string,
@@ -148,7 +145,7 @@ interface Game {
     numbersDrawn: Array<number>
 }
 
-const PlayerGames: React.FC<AddressProps> = (playerGamesProps: AddressProps) => {
+const GamesGallery: React.FC<GamesLobbyProps> = (playerGamesProps: GamesLobbyProps) => {
     let pageSize = 6;
     let defaultGame: Game = {
         hostAddress: "0x0",

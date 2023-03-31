@@ -1,23 +1,29 @@
 import React, {CSSProperties, useEffect, useState} from "react";
+import {addWalletListener, connectWallet, getCurrentWalletConnected, removeWalletListener} from "../utils/connect";
+import {UserOutlined} from "@ant-design/icons";
+import {getCards, getGameInfo, getTotalGameCount} from "../utils/stubs";
 import {
     Avatar,
     Button,
-    Card, Checkbox,
+    Card,
     Col,
     Descriptions,
     Divider,
     Drawer,
-    Form, Input, InputNumber,
+    Form,
+    Input,
+    InputNumber,
     Layout,
     Menu,
     Pagination,
+    Radio,
     Row,
     theme
 } from "antd";
-import {addWalletListener, connectWallet, getCurrentWalletConnected, removeWalletListener} from "../utils/connect";
-import {UserOutlined} from "@ant-design/icons";
-import {getCards, getGameInfo, getTotalGameCount} from "../utils/stubs";
-import {Radio} from "antd";
+
+const Web3 = require("web3");
+const BN = Web3.utils.BN;
+
 
 const {Meta} = Card;
 const {Header, Content, Footer, Sider} = Layout;
@@ -184,11 +190,31 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
     let [selectedNumbers, setSelectedNumbers] = useState([] as Array<number>);
     let [createGameDrawerOpen, setCreateGameDrawerOpen] = useState(false);
     let [createGameFor, setCreateGameForm] = useState({});
+    let [errorMsg, setErrorMsg] = useState("You must fill out the form.");
+    let [showErrorMsg, setShowErrorMsg] = useState(false);
+
     let numberSelectCallback = function (changedValue: any, values: any) {
+        setShowErrorMsg(false);
         let nums = [];
         for (let i = 0; i < 25; i++) {
-            nums.push(values[i]);
+            if (values[i] === undefined) {
+                setErrorMsg(`You must fill out all the numbers.`);
+                return;
+            }
+            let num = values[i];
+            try {
+                let parsedInt = parseInt(num);
+                if (parsedInt >= 100) {
+                    setErrorMsg(`The number in block ${i} is of invalid value.`);
+                    return;
+                }
+                nums.push(parsedInt);
+            } catch (e) {
+                setErrorMsg(`The number in block ${i} is of invalid value.`);
+                return;
+            }
         }
+        setErrorMsg("");
         setSelectedNumbers(nums);
     };
     let [numberInputForm, setNumberInputForm] = useState(<BingoCardEditable onFormChanged={numberSelectCallback}/>);
@@ -288,11 +314,14 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
     let onDrawerClose = () => {
         setJoinedGameDrawerOpen(false);
         setGeneralGameDrawerOpen(false);
+        setCreateGameDrawerOpen(false);
         setGame(defaultGame);
         setSelectedGameID("");
         setCards([]);
         setNumberInputForm(<BingoCardEditable onFormChanged={numberSelectCallback}/>);
         setCreateGameForm({});
+        setShowErrorMsg(false);
+        setErrorMsg("You must fill out the form.");
     };
 
     let joinedGameFilterRadio = <Radio.Group defaultValue="a" buttonStyle="solid" style={{
@@ -412,8 +441,10 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
                                         <div style={{
                                             display: "flex",
                                             flexDirection: "column",
-                                            alignItems: "center"
+                                            alignItems: "center",
+                                            justifyContent: "space-evenly"
                                         }}>
+                                            {showErrorMsg && <p style={{color: "red"}}>{errorMsg}</p>}
                                             <Button onClick={
                                                 () => {
                                                     let randCard = generateRandomCard();
@@ -422,8 +453,21 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
                                                                            cardNumbers={randCard}/>
                                                     );
                                                     setSelectedNumbers(randCard);
+                                                    setErrorMsg("");
+                                                    setShowErrorMsg(false);
                                                 }
                                             }>Generate Random Numbers
+                                            </Button>
+                                            <Button onClick={
+                                                () => {
+                                                    setNumberInputForm(
+                                                        <BingoCardEditable onFormChanged={numberSelectCallback}/>
+                                                    );
+                                                    setSelectedNumbers([]);
+                                                    setErrorMsg("Please fill out the card!");
+                                                    setShowErrorMsg(false);
+                                                }
+                                            } style={{marginTop: "16px"}}>Reset the Card
                                             </Button>
                                         </div>
                                     </div>
@@ -475,7 +519,11 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
                                                 }}>
                                                     <Button onClick={
                                                         () => {
-                                                            setBuyingCards(false);
+                                                            if (errorMsg.length != 0) {
+                                                                setShowErrorMsg(true);
+                                                            } else {
+                                                                alert("submitted!"); // todo: handle submission
+                                                            }
                                                         }
                                                     }>
                                                         Confirm
@@ -505,30 +553,111 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
                                     height: "100%"
                                 }
                             }>
+                                <p>
+                                    To create a game and become the host of the game, you need to specify
+                                    the Bingo card price of the game, the percentage you will get out of
+                                    the total prize pool, the start time of the game, and the number draw interval.
+                                    Please note that as the host of the game, you need to pay three times of
+                                    the card price as the initial prize pool. You may also want to set the
+                                    percentage you will get out of the prize pool wisely. If you set it too
+                                    low, it may not even cover the gas fee. If you set it too high, players
+                                    may not want to join your game.
+                                </p>
                                 <Card title={`New Game`} style={{height: "fit-content"}}>
                                     <Form onValuesChange={
                                         function (changedValues: any, values: any) {
+                                            for (const k in values) {
+                                                if (values[k] === undefined) {
+                                                    setErrorMsg("All fields must be entered.");
+                                                    return;
+                                                }
+                                            }
+                                            if (!/^\d+$/.test(values["cardPrice"])) {
+                                                setErrorMsg("The card price is of invalid value.");
+                                                return;
+                                            }
+                                            if (!/^\d+$/.test(values["hostFee"]) || parseInt(values["hostFee"]) > 100) {
+                                                setErrorMsg("The host fee is of invalid value.");
+                                                return;
+                                            }
+                                            if (!/^\d+$/.test(values["turnTime"])) {
+                                                setErrorMsg("The number draw interval is of invalid value.");
+                                                return;
+                                            }
+                                            if (!/\d\d:\d\d:\d\d/.test(values["startTime"])) {
+                                                setErrorMsg("The start time is of invalid value.");
+                                                return;
+                                            }
+                                            if (!/\d\d\d\d\.\d\d\.\d\d/.test(values["startDate"])) {
+                                                setErrorMsg("The start date is of invalid value.");
+                                                return;
+                                            }
+
+                                            try {
+                                                // This time parsing logic is based on code provided by OpenAI's ChatGPT.
+                                                let time = values["startTime"];
+                                                let parts = time.split(":");
+                                                const hours = parseInt(parts[0], 10);
+                                                const minutes = parseInt(parts[1], 10);
+                                                const seconds = parseInt(parts[2], 10);
+                                                const totalSeconds = (hours * 60 * 60) + (minutes * 60) + seconds;
+                                                const dateString = values["startDate"];
+                                                parts = dateString.split(".");
+                                                const year = parseInt(parts[0], 10);
+                                                const month = parseInt(parts[1], 10) - 1; // subtract 1 since months are zero-indexed in JS
+                                                const day = parseInt(parts[2], 10);
+                                                const date = new Date(year, month, day);
+                                                values["startTime"] = Math.floor(date.getTime() / 1000) + totalSeconds;
+                                                delete values["startDate"];
+                                            } catch (e) {
+                                                setErrorMsg("The start time or the start date is of invalid value.");
+                                                return;
+                                            }
+
+                                            let eth = new BN("1000000000000000000");
+                                            values["hostFee"] = eth.mul(new BN(values["hostFee"])).div(new BN(100));
+                                            values["cardPrice"] = new BN(values["cardPrice"]);
                                             setCreateGameForm(values);
+                                            setErrorMsg("");
                                         }
                                     }>
                                         < Form.Item name={"cardPrice"} label={"Bingo card price in Wei"}>
-                                            <InputNumber/>
+                                            <Input/>
                                         </Form.Item>
                                         <Form.Item name={"hostFee"} label={"Host fee in percentage (0-100)"}>
-                                            <InputNumber/>
+                                            <Input/>
                                         </Form.Item>
                                         <Form.Item name={"startTime"} label={"Game start time (hh:mm:ss)"}>
                                             <Input/>
                                         </Form.Item>
-                                        <Form.Item name={"startDate"} label={"Game start date (yyyy:mm:dd)"}>
+                                        <Form.Item name={"startDate"} label={"Game start date (yyyy.mm.dd)"}>
                                             <Input/>
                                         </Form.Item>
                                         <Form.Item name={"turnTime"} label={"Number draw interval in seconds"}>
                                             <InputNumber/>
                                         </Form.Item>
                                     </Form>
-                                    <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
-                                        <Button>Confirm New Game</Button>
+                                    {showErrorMsg && <div style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        color: "red"
+                                    }}>{errorMsg}</div>}
+                                    <div style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        marginTop: "16px"
+                                    }}>
+                                        <Button onClick={() => {
+                                            if (errorMsg.length != 0) {
+                                                setShowErrorMsg(true);
+                                            } else {
+                                                // todo: submit the create new game request
+                                                alert("Submitted!");
+                                            }
+                                        }
+                                        }>Confirm New Game</Button>
                                     </div>
                                 </Card>
                             </div>
@@ -622,6 +751,9 @@ function generateRandomCard(): Array<number> {
             while (randNum in generated) {
                 randNum = getRandomInt(ranges[i][0], ranges[i][1]);
             }
+            if (i * 5 + j == 12) {
+                randNum = 0;
+            }
             nums.push(randNum);
         }
     }
@@ -658,7 +790,8 @@ const BingoCardEditable = (props: BingoCardEditableProps) => {
                         height: "100%",
                         alignItems: "center"
                     }}>
-                        {props.cardNumbers ? <Input value={props.cardNumbers[idx]}></Input> : <Input></Input>}
+                        {idx == 12 ? <Input value={0} disabled={true}></Input> : (props.cardNumbers ?
+                            <Input value={props.cardNumbers[idx]}></Input> : <Input></Input>)}
                     </div>
                 </Form.Item>
             </Col>;

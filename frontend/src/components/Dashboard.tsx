@@ -20,12 +20,13 @@ import {
     Input,
     InputNumber,
     Layout,
-    Menu,
+    Menu, Modal,
     Pagination,
     Radio,
     Row,
     theme,
 } from "antd";
+import {Spin} from "antd/lib";
 
 const Web3 = require("web3");
 const BN = Web3.utils.BN;
@@ -246,6 +247,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         poolValue: 0,
         numbersDrawn: [0],
     };
+
     let [page, setPage] = useState(1);
     let [totalGameCount, setTotalGameCount] = useState(0);
     let [joinedGameDrawerOpen, setJoinedGameDrawerOpen] = useState(false);
@@ -260,7 +262,9 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     let [createGameFor, setCreateGameForm] = useState({});
     let [errorMsg, setErrorMsg] = useState("You must fill out the form.");
     let [showErrorMsg, setShowErrorMsg] = useState(false);
-
+    let [waiting, setWaiting] = useState(false);
+    let [result, setResult] = useState("");
+    let [modalOpen, setModalOpen] = useState(false);
     let numberSelectCallback = function (changedValue: any, values: any) {
         setShowErrorMsg(false);
         let nums = [];
@@ -488,6 +492,26 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
 
     return (
         <div>
+            <Modal title={waiting ? "Waiting for the result" : "Transaction result"} open={modalOpen}
+                   closable={false} maskClosable={false} cancelButtonProps={{style: {visibility: "hidden"}}}
+                   okButtonProps={
+                       {
+                           disabled: waiting, onClick: function () {
+                               setModalOpen(false);
+                           }
+                       }
+                   }
+                   width={"50vw"}
+            >
+                {
+                    waiting &&
+                    <div style={{height:"30vh"}}>
+                        <Spin tip="Processing" size="large" style={{marginTop: "32px", marginBottom: "32px"}}>
+                            <div className="content"/>
+                        </Spin>
+                    </div>
+                }
+            </Modal>
             <Layout>
                 <Sider
                     style={{
@@ -739,21 +763,21 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                         "space-around",
                                                     display: "flex",
                                                     flexDirection: "row",
-                                                    width: "100%",
-                                                }}
-                                            >
-                                                <Button
-                                                    onClick={() => {
-                                                        if (
-                                                            errorMsg.length != 0
-                                                        ) {
-                                                            setShowErrorMsg(
-                                                                true
-                                                            );
-                                                        } else {
-                                                            alert("submitted!"); // todo: handle submission
+                                                    width: "100%"
+                                                }}>
+                                                    <Button onClick={
+                                                        () => {
+                                                            if (errorMsg.length != 0) {
+                                                                setShowErrorMsg(true);
+                                                            } else {
+                                                                setWaiting(true);
+                                                                setModalOpen(true);
+                                                                setTimeout(() => {
+                                                                    setWaiting(false);
+                                                                }, 5000);
+                                                            }
                                                         }
-                                                    }}
+                                                    }
                                                 >
                                                     Confirm
                                                 </Button>

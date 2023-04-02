@@ -2,8 +2,6 @@ import React from "react";
 import { Button, Col, Image, Row } from "antd";
 
 import { Layout, Space } from "antd";
-import { bingoContract, getDevAddress, drawNumber } from "../utils/interact";
-import { connectWallet } from "../utils/connect";
 
 const { Header, Footer, Sider, Content } = Layout;
 

@@ -29,7 +29,6 @@ export const connectWallet = async () => {
                 status: "👆🏽 input the transfer to addresst in the text-field above.",
                 address: addressArray[0],
             };
-            console.log(obj);
             return obj;
         } catch (err) {
             return {

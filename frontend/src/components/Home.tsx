@@ -44,12 +44,6 @@ type HomePrompt = {
     goToDashboard: () => void;
 };
 
-const getInfo = async () => {
-    await connectWallet();
-    const log_info = await getDevAddress();
-    console.log("draw number:", log_info);
-};
-
 export function Home(homePrompt: HomePrompt): JSX.Element {
     return (
         <Space direction="vertical" style={{ width: "100%", height: "100%" }}>
@@ -112,9 +106,6 @@ export function Home(homePrompt: HomePrompt): JSX.Element {
                                             >
                                                 What is Bingo571G?
                                             </p>
-                                            <button onClick={getInfo}>
-                                                logger
-                                            </button>
                                             <p
                                                 style={{
                                                     textAlign: "left",

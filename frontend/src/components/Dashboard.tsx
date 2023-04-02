@@ -1,7 +1,13 @@
-import React, {CSSProperties, useEffect, useState} from "react";
-import {addWalletListener, connectWallet, getCurrentWalletConnected, removeWalletListener} from "../utils/connect";
-import {UserOutlined} from "@ant-design/icons";
-import {getCards, getGameInfo, getTotalGameCount} from "../utils/stubs";
+import React, { CSSProperties, useEffect, useState } from "react";
+import {
+    addWalletListener,
+    connectWallet,
+    getCurrentWalletConnected,
+    removeWalletListener,
+} from "../utils/connect";
+
+import { UserOutlined } from "@ant-design/icons";
+import { getCards, getGameInfo, getTotalGameCount } from "../utils/stubs";
 import {
     Avatar,
     Button,
@@ -18,22 +24,21 @@ import {
     Pagination,
     Radio,
     Row,
-    theme
+    theme,
 } from "antd";
 
 const Web3 = require("web3");
 const BN = Web3.utils.BN;
 
-
-const {Meta} = Card;
-const {Header, Content, Footer, Sider} = Layout;
+const { Meta } = Card;
+const { Header, Content, Footer, Sider } = Layout;
 
 export const Dashboard: React.FC = () => {
     let [address, setAddress] = useState("");
     const {
-        token: {colorBgContainer},
+        token: { colorBgContainer },
     } = theme.useToken();
-    let [content, setContent] = useState(Login({setAddress: setAddress}));
+    let [content, setContent] = useState(Login({ setAddress: setAddress }));
     let [selectedMenuKey, setSelectedMenuKey] = useState("1");
 
     function changeAccountCallback(accounts: Array<string>) {
@@ -43,111 +48,172 @@ export const Dashboard: React.FC = () => {
         } else {
             setAddress("");
         }
+
         removeWalletListener(changeAccountCallback);
     }
 
     useEffect(() => {
-        getCurrentWalletConnected().then(
-            (wallet) => {
-                if (wallet.address) {
-                    setAddress(wallet.address);
-                    setContent(
-                        <GamesGallery address={address} lobbyType={"allGames"}></GamesGallery>
-                    );
-                    setSelectedMenuKey("1");
-                    addWalletListener(changeAccountCallback);
-                } else {
-                    setAddress("");
-                    setContent(Login({setAddress: setAddress}));
-                }
+        getCurrentWalletConnected().then((wallet) => {
+            if (!wallet.address) {
+                setAddress(wallet.address);
+                setContent(
+                    <GamesGallery
+                        address={address}
+                        lobbyType={"allGames"}
+                    ></GamesGallery>
+                );
+                setSelectedMenuKey("1");
+                addWalletListener(changeAccountCallback);
+            } else {
+                setAddress("");
+                setContent(Login({ setAddress: setAddress }));
             }
-        );
+        });
     }, [address]);
 
     return (
         <Layout className="layout">
             <Header>
-                <div style={{float: "left", display: "flex", width: "50vw", justifyContent: "left"}}>
-                    <div style={{float: "left", color: "white", fontSize: 24}}>BINGO571G</div>
+                <div
+                    style={{
+                        float: "left",
+                        display: "flex",
+                        width: "50vw",
+                        justifyContent: "left",
+                    }}
+                >
+                    <div
+                        style={{ float: "left", color: "white", fontSize: 24 }}
+                    >
+                        BINGO571G
+                    </div>
                     <Menu
                         theme="dark"
                         mode="horizontal"
                         defaultSelectedKeys={["1"]}
                         selectedKeys={[selectedMenuKey]}
-                        items={
-                            [
-                                {
-                                    key: 0, label: "My Bingo Games", disabled: address.length == 0, onClick: () => {
-                                        setSelectedMenuKey("0");
-                                        setContent(<GamesGallery address={address}
-                                                                 lobbyType={"joinedGames"}></GamesGallery>);
-                                    }
+                        items={[
+                            {
+                                key: 0,
+                                label: "My Bingo Games",
+                                disabled: address.length == 0,
+                                onClick: () => {
+                                    setSelectedMenuKey("0");
+                                    setContent(
+                                        <GamesGallery
+                                            address={address}
+                                            lobbyType={"joinedGames"}
+                                        ></GamesGallery>
+                                    );
                                 },
-                                {
-                                    key: 1, label: "Game lobby", disabled: address.length == 0, onClick: () => {
-                                        setSelectedMenuKey("1");
-                                        setContent(<GamesGallery address={address}
-                                                                 lobbyType={"allGames"}></GamesGallery>);
-                                    }
+                            },
+                            {
+                                key: 1,
+                                label: "Game lobby",
+                                disabled: address.length == 0,
+                                onClick: () => {
+                                    setSelectedMenuKey("1");
+                                    setContent(
+                                        <GamesGallery
+                                            address={address}
+                                            lobbyType={"allGames"}
+                                        ></GamesGallery>
+                                    );
                                 },
-                                {
-                                    key: 3, label: "About", onClick: () => {
-                                        window.location.reload();
-                                    }
-                                }
-                            ]
-                        }
-                        style={{float: "left", width: "20vw"}}
+                            },
+                            {
+                                key: 3,
+                                label: "About",
+                                onClick: () => {
+                                    window.location.reload();
+                                },
+                            },
+                        ]}
+                        style={{ float: "left", width: "20vw" }}
                     />
                 </div>
-                <div style={{float: "right", color: "white", display: "flex", alignItems: "center"}}>
-                    {address.length > 0 && <Avatar shape="square" size="large" icon={<UserOutlined/>}/>}
-                    {address.length > 0 && address.substring(0, 5) + "..." + address.substring(address.length - 3, address.length)}
+                <div
+                    style={{
+                        float: "right",
+                        color: "white",
+                        display: "flex",
+                        alignItems: "center",
+                    }}
+                >
+                    {address.length > 0 && (
+                        <Avatar
+                            shape="square"
+                            size="large"
+                            icon={<UserOutlined />}
+                        />
+                    )}
+                    {address.length > 0 &&
+                        address.substring(0, 5) +
+                            "..." +
+                            address.substring(
+                                address.length - 3,
+                                address.length
+                            )}
                 </div>
             </Header>
-            <Content style={{padding: "0 50px"}}>
-                <div className="site-layout-content" style={
-                    {background: colorBgContainer, alignItems: "center", display: "flex", flexDirection: "column"}
-                }>
+            <Content style={{ padding: "0 50px" }}>
+                <div
+                    className="site-layout-content"
+                    style={{
+                        background: colorBgContainer,
+                        alignItems: "center",
+                        display: "flex",
+                        flexDirection: "column",
+                    }}
+                >
                     {content}
                 </div>
             </Content>
-            <Footer style={{textAlign: "center"}}>Created by Jingqian Liu</Footer>
+            <Footer style={{ textAlign: "center" }}>
+                Created by Jingqian Liu
+            </Footer>
         </Layout>
     );
 };
 
 const Login: React.FC = (loginProps: any) => {
-    return <Card title="Login to your wallet" bordered={true} style={{width: 300}}>
-        <div style={
-            {
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                height: "15vh",
-                justifyContent: "space-evenly"
-            }
-        }>
-            <Button onClick={async () => {
-                let connectResult = await connectWallet();
-                if (connectResult.address) {
-                    loginProps.setAddress(connectResult.address);
-                } else {
-                    alert(connectResult.status);
-                }
-            }
-            }>Connect via MetaMask</Button>
-            <Button onClick=
-                        {
-                            () => {
-                                window.location.href = "https://metamask.io";
-                            }
-                        }
+    return (
+        <Card
+            title="Login to your wallet"
+            bordered={true}
+            style={{ width: 300 }}
+        >
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    height: "15vh",
+                    justifyContent: "space-evenly",
+                }}
             >
-                What is MetaMask?
-            </Button>
-        </div>
-    </Card>;
+                <Button
+                    onClick={async () => {
+                        let connectResult = await connectWallet();
+                        if (connectResult.address) {
+                            loginProps.setAddress(connectResult.address);
+                        } else {
+                            alert(connectResult.status);
+                        }
+                    }}
+                >
+                    Connect via MetaMask
+                </Button>
+                <Button
+                    onClick={() => {
+                        window.location.href = "https://metamask.io";
+                    }}
+                >
+                    What is MetaMask?
+                </Button>
+            </div>
+        </Card>
+    );
 };
 
 interface GamesLobbyProps {
@@ -156,17 +222,19 @@ interface GamesLobbyProps {
 }
 
 interface Game {
-    hostAddress: string,
-    cardPrice: number,
-    startTime: number,
-    hostFee: number,
-    turnTime: number,
-    hasCompleted: boolean,
-    poolValue: number,
-    numbersDrawn: Array<number>
+    hostAddress: string;
+    cardPrice: number;
+    startTime: number;
+    hostFee: number;
+    turnTime: number;
+    hasCompleted: boolean;
+    poolValue: number;
+    numbersDrawn: Array<number>;
 }
 
-const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProps) => {
+const GamesGallery: React.FC<GamesLobbyProps> = (
+    gamesLobbyProps: GamesLobbyProps
+) => {
     let pageSize = 6;
     let defaultGame: Game = {
         hostAddress: "0x0",
@@ -205,7 +273,9 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
             try {
                 let parsedInt = parseInt(num);
                 if (parsedInt >= 100) {
-                    setErrorMsg(`The number in block ${i} is of invalid value.`);
+                    setErrorMsg(
+                        `The number in block ${i} is of invalid value.`
+                    );
                     return;
                 }
                 nums.push(parsedInt);
@@ -217,28 +287,28 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
         setErrorMsg("");
         setSelectedNumbers(nums);
     };
-    let [numberInputForm, setNumberInputForm] = useState(<BingoCardEditable onFormChanged={numberSelectCallback}/>);
+    let [numberInputForm, setNumberInputForm] = useState(
+        <BingoCardEditable onFormChanged={numberSelectCallback} />
+    );
 
     useEffect(
         function () {
-            getTotalGameCount().then(
-                function (count) {
-                    setTotalGameCount(count);
-                }
-            );
-        }, [totalGameCount]
+            getTotalGameCount().then(function (count) {
+                setTotalGameCount(count);
+            });
+        },
+        [totalGameCount]
     );
 
     useEffect(
         function () {
             if (selectedGameID !== "") {
-                getGameInfo(selectedGameID).then(
-                    function (game: Game) {
-                        setGame(game);
-                    }
-                );
+                getGameInfo(selectedGameID).then(function (game: Game) {
+                    setGame(game);
+                });
             }
-        }, [selectedGameID]
+        },
+        [selectedGameID]
     );
 
     useEffect(
@@ -250,67 +320,95 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
                     }
                 );
             }
-        }, [selectedGameID]
+        },
+        [selectedGameID]
     );
 
-    let numGameOnPage = page * pageSize > totalGameCount ? totalGameCount % pageSize : pageSize;
+    let numGameOnPage =
+        page * pageSize > totalGameCount ? totalGameCount % pageSize : pageSize;
     let row1: Array<JSX.Element> = [];
     for (let i = 0; i < 3; i++) {
         row1.push(
             <Col key={i.toString()} span={24 / 3}>
-                {
-                    i < numGameOnPage ?
-                        <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
-                            <GameIcon gameID={i.toString()} onClick={
-                                function () {
-                                    if (gamesLobbyProps.lobbyType == "joinedGames") {
-                                        setJoinedGameDrawerOpen(true);
-                                    } else {
-                                        setGeneralGameDrawerOpen(true);
-                                    }
-                                    setSelectedGameID(i.toString());
+                {i < numGameOnPage ? (
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                        }}
+                    >
+                        <GameIcon
+                            gameID={i.toString()}
+                            onClick={function () {
+                                if (
+                                    gamesLobbyProps.lobbyType == "joinedGames"
+                                ) {
+                                    setJoinedGameDrawerOpen(true);
+                                } else {
+                                    setGeneralGameDrawerOpen(true);
                                 }
-                            }/>
-                        </div> : <></>
-                }
-            </Col>,
+                                setSelectedGameID(i.toString());
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <></>
+                )}
+            </Col>
         );
     }
     let row2: Array<JSX.Element> = [];
     for (let i = 3; i < 6; i++) {
         row2.push(
             <Col key={i.toString()} span={24 / 3}>
-                {
-                    i < numGameOnPage ?
-                        <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
-                            <GameIcon gameID={i.toString()} onClick={
-                                function () {
-                                    if (gamesLobbyProps.lobbyType == "joinedGames") {
-                                        setJoinedGameDrawerOpen(true);
-                                    } else {
-                                        setGeneralGameDrawerOpen(true);
-                                    }
-                                    setSelectedGameID(i.toString());
+                {i < numGameOnPage ? (
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                        }}
+                    >
+                        <GameIcon
+                            gameID={i.toString()}
+                            onClick={function () {
+                                if (
+                                    gamesLobbyProps.lobbyType == "joinedGames"
+                                ) {
+                                    setJoinedGameDrawerOpen(true);
+                                } else {
+                                    setGeneralGameDrawerOpen(true);
                                 }
-                            }/>
-                        </div> : <></>
-                }
-            </Col>,
+                                setSelectedGameID(i.toString());
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <></>
+                )}
+            </Col>
         );
     }
-    let bingoCardComponents = cards.map(
-        function (singleCard, idx) {
-            return <BingoCard cardNumbers={singleCard}
-                              tickedNumbers={game.numbersDrawn.filter((value) => value != 100)}
-                              key={idx}
-            ></BingoCard>;
-        }
-    );
+    let bingoCardComponents = cards.map(function (singleCard, idx) {
+        return (
+            <BingoCard
+                cardNumbers={singleCard}
+                tickedNumbers={game.numbersDrawn.filter(
+                    (value) => value != 100
+                )}
+                key={idx}
+            ></BingoCard>
+        );
+    });
 
     let gameStartTime = new Date(game.startTime * 1e3);
     let gameDrawNumberInterval = game.turnTime;
 
-    let title = gamesLobbyProps.lobbyType == "joinedGames" ? "Joined Bingo Games" : "All Bingo Games";
+    let title =
+        gamesLobbyProps.lobbyType == "joinedGames"
+            ? "Joined Bingo Games"
+            : "All Bingo Games";
     let onDrawerClose = () => {
         setJoinedGameDrawerOpen(false);
         setGeneralGameDrawerOpen(false);
@@ -318,278 +416,458 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
         setGame(defaultGame);
         setSelectedGameID("");
         setCards([]);
-        setNumberInputForm(<BingoCardEditable onFormChanged={numberSelectCallback}/>);
+        setNumberInputForm(
+            <BingoCardEditable onFormChanged={numberSelectCallback} />
+        );
         setCreateGameForm({});
         setShowErrorMsg(false);
         setErrorMsg("You must fill out the form.");
     };
 
-    let joinedGameFilterRadio = <Radio.Group defaultValue="a" buttonStyle="solid" style={{
-        display: "flex",
-        width: "100%",
-        flexDirection: "column",
-        alignItems: "center"
-    }}>
-        <Radio.Button value="a">
-            <div style={{width: "90px", textAlign: "center"}}>All</div>
-        </Radio.Button>
-        <Radio.Button value="b">
-            <div style={{width: "90px", textAlign: "center"}}>Finished</div>
-        </Radio.Button>
-        <Radio.Button value="c">
-            <div style={{width: "90px", textAlign: "center"}}>Unfinished</div>
-        </Radio.Button>
-    </Radio.Group>;
-    let allGameFilterRadio = <Radio.Group defaultValue="d" buttonStyle="solid" style={{
-        display: "flex",
-        width: "100%",
-        flexDirection: "column",
-        alignItems: "center"
-    }}>
-        <Radio.Button value="d">
-            <div style={{width: "90px", textAlign: "center"}}>All</div>
-        </Radio.Button>
-        <Radio.Button value="e">
-            <div style={{width: "90px", textAlign: "center"}}>Started</div>
-        </Radio.Button>
-        <Radio.Button value="f">
-            <div style={{width: "90px", textAlign: "center"}}>Unstarted</div>
-        </Radio.Button>
-        <Radio.Button value="f">
-            <div style={{width: "90px", textAlign: "center"}}>Hosted By Me</div>
-        </Radio.Button>
-    </Radio.Group>;
+    let joinedGameFilterRadio = (
+        <Radio.Group
+            defaultValue="a"
+            buttonStyle="solid"
+            style={{
+                display: "flex",
+                width: "100%",
+                flexDirection: "column",
+                alignItems: "center",
+            }}
+        >
+            <Radio.Button value="a">
+                <div style={{ width: "90px", textAlign: "center" }}>All</div>
+            </Radio.Button>
+            <Radio.Button value="b">
+                <div style={{ width: "90px", textAlign: "center" }}>
+                    Finished
+                </div>
+            </Radio.Button>
+            <Radio.Button value="c">
+                <div style={{ width: "90px", textAlign: "center" }}>
+                    Unfinished
+                </div>
+            </Radio.Button>
+        </Radio.Group>
+    );
+    let allGameFilterRadio = (
+        <Radio.Group
+            defaultValue="d"
+            buttonStyle="solid"
+            style={{
+                display: "flex",
+                width: "100%",
+                flexDirection: "column",
+                alignItems: "center",
+            }}
+        >
+            <Radio.Button value="d">
+                <div style={{ width: "90px", textAlign: "center" }}>All</div>
+            </Radio.Button>
+            <Radio.Button value="e">
+                <div style={{ width: "90px", textAlign: "center" }}>
+                    Started
+                </div>
+            </Radio.Button>
+            <Radio.Button value="f">
+                <div style={{ width: "90px", textAlign: "center" }}>
+                    Unstarted
+                </div>
+            </Radio.Button>
+            <Radio.Button value="f">
+                <div style={{ width: "90px", textAlign: "center" }}>
+                    Hosted By Me
+                </div>
+            </Radio.Button>
+        </Radio.Group>
+    );
 
     const {
-        token: {colorBgContainer, borderRadius, colorBorder,},
+        token: { colorBgContainer, borderRadius, colorBorder },
     } = theme.useToken();
 
     return (
         <div>
             <Layout>
-                <Sider style={{
-                    background: colorBgContainer,
-                    borderRadius: borderRadius,
-                    borderColor: colorBorder,
-                    borderStyle: "solid"
-                }}>
+                <Sider
+                    style={{
+                        background: colorBgContainer,
+                        borderRadius: borderRadius,
+                        borderColor: colorBorder,
+                        borderStyle: "solid",
+                    }}
+                >
                     <div
-                        style={{textAlign: "center", marginTop: "16px", marginBottom: "16px", fontSize: "1.5em"}}>Filter
+                        style={{
+                            textAlign: "center",
+                            marginTop: "16px",
+                            marginBottom: "16px",
+                            fontSize: "1.5em",
+                        }}
+                    >
+                        Filter
                     </div>
-                    <div style={{display: "flex", flexDirection: "column", alignItems: "center", width: "100%"}}>
-                        {gamesLobbyProps.lobbyType == "joinedGames" ? joinedGameFilterRadio : allGameFilterRadio}
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            width: "100%",
+                        }}
+                    >
+                        {gamesLobbyProps.lobbyType == "joinedGames"
+                            ? joinedGameFilterRadio
+                            : allGameFilterRadio}
                     </div>
                 </Sider>
-                <div style={{alignItems: "self-start"}}>
-                    <Card title={title} bordered={true} style={{width: "fit-content", height: "100%"}}>
-                        {
-                            gamesLobbyProps.lobbyType == "allGames" &&
+                <div style={{ alignItems: "self-start" }}>
+                    <Card
+                        title={title}
+                        bordered={true}
+                        style={{ width: "fit-content", height: "100%" }}
+                    >
+                        {gamesLobbyProps.lobbyType == "allGames" && (
                             <>
-                                <div style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "end",
-                                    marginTop: "24px",
-                                    marginBottom: "24px"
-                                }}>
-                                    <Button onClick={() => {
-                                        setCreateGameDrawerOpen(true);
-                                    }}> Create a New Game </Button>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "end",
+                                        marginTop: "24px",
+                                        marginBottom: "24px",
+                                    }}
+                                >
+                                    <Button
+                                        onClick={() => {
+                                            setCreateGameDrawerOpen(true);
+                                        }}
+                                    >
+                                        {" "}
+                                        Create a New Game{" "}
+                                    </Button>
                                 </div>
-                                <Divider/>
+                                <Divider />
                             </>
-                        }
+                        )}
 
-                        <Row gutter={[64, 64]} style={{width: "75vw"}}>
+                        <Row gutter={[64, 64]} style={{ width: "75vw" }}>
                             {row1}
                             {row2}
                         </Row>
                         <div
-                            style={{display: "flex", flexDirection: "column", alignItems: "center", marginTop: "32px"}}>
-                            <Pagination defaultCurrent={1} total={totalGameCount} pageSize={pageSize} onChange={
-                                (page, pageSize) => {
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                marginTop: "32px",
+                            }}
+                        >
+                            <Pagination
+                                defaultCurrent={1}
+                                total={totalGameCount}
+                                pageSize={pageSize}
+                                onChange={(page, pageSize) => {
                                     setPage(page);
-                                }
-                            }/>
+                                }}
+                            />
                         </div>
 
                         {/*Lobby game drawer*/}
-                        <Drawer title={"Game " + selectedGameID} placement="right" open={generalGameDrawerOpen}
-                                onClose={onDrawerClose}>
-                            <div style={
-                                {
+                        <Drawer
+                            title={"Game " + selectedGameID}
+                            placement="right"
+                            open={generalGameDrawerOpen}
+                            onClose={onDrawerClose}
+                        >
+                            <div
+                                style={{
                                     display: "flex",
                                     flexDirection: "column",
                                     justifyContent: "space-between",
-                                    height: "100%"
-                                }
-                            }>
-                                {
-                                    buyingCards &&
+                                    height: "100%",
+                                }}
+                            >
+                                {buyingCards && (
                                     <div>
-                                        <div style={
-                                            {
+                                        <div
+                                            style={{
                                                 textAlign: "center",
                                                 fontSize: "1.5em",
                                                 marginBottom: "16px",
-                                            }
-                                        }>Select a Card
+                                            }}
+                                        >
+                                            Select a Card
                                         </div>
-                                        <div style={{overflow: "auto", height: "35vh"}}>
+                                        <div
+                                            style={{
+                                                overflow: "auto",
+                                                height: "35vh",
+                                            }}
+                                        >
                                             {numberInputForm}
                                         </div>
-                                        <div style={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            alignItems: "center",
-                                            justifyContent: "space-evenly"
-                                        }}>
-                                            {showErrorMsg && <p style={{color: "red"}}>{errorMsg}</p>}
-                                            <Button onClick={
-                                                () => {
-                                                    let randCard = generateRandomCard();
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                justifyContent: "space-evenly",
+                                            }}
+                                        >
+                                            {showErrorMsg && (
+                                                <p style={{ color: "red" }}>
+                                                    {errorMsg}
+                                                </p>
+                                            )}
+                                            <Button
+                                                onClick={() => {
+                                                    let randCard =
+                                                        generateRandomCard();
                                                     setNumberInputForm(
-                                                        <BingoCardEditable onFormChanged={numberSelectCallback}
-                                                                           cardNumbers={randCard}/>
+                                                        <BingoCardEditable
+                                                            onFormChanged={
+                                                                numberSelectCallback
+                                                            }
+                                                            cardNumbers={
+                                                                randCard
+                                                            }
+                                                        />
                                                     );
-                                                    setSelectedNumbers(randCard);
+                                                    setSelectedNumbers(
+                                                        randCard
+                                                    );
                                                     setErrorMsg("");
                                                     setShowErrorMsg(false);
-                                                }
-                                            }>Generate Random Numbers
+                                                }}
+                                            >
+                                                Generate Random Numbers
                                             </Button>
-                                            <Button onClick={
-                                                () => {
+                                            <Button
+                                                onClick={() => {
                                                     setNumberInputForm(
-                                                        <BingoCardEditable onFormChanged={numberSelectCallback}/>
+                                                        <BingoCardEditable
+                                                            onFormChanged={
+                                                                numberSelectCallback
+                                                            }
+                                                        />
                                                     );
                                                     setSelectedNumbers([]);
-                                                    setErrorMsg("Please fill out the card!");
+                                                    setErrorMsg(
+                                                        "Please fill out the card!"
+                                                    );
                                                     setShowErrorMsg(false);
-                                                }
-                                            } style={{marginTop: "16px"}}>Reset the Card
+                                                }}
+                                                style={{ marginTop: "16px" }}
+                                            >
+                                                Reset the Card
                                             </Button>
                                         </div>
                                     </div>
-                                }
-                                <Card title={`Game ${selectedGameID}`} style={{height: "fit-content"}}>
-                                    <Descriptions title="Game Infomation" column={1}>
-                                        <Descriptions.Item
-                                            label="Host Wallet">{game.hostAddress.substring(0, 5) + "..." + game.hostAddress.substring(game.hostAddress.length - 3, game.hostAddress.length)}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Card Price in Wei">{game.cardPrice}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Start Time">{formatTime(gameStartTime)}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Number Draw Interval in Seconds">{gameDrawNumberInterval}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Completed?"> {game.hasCompleted.toString()}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Pool Value in Wei"> {game.poolValue}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Numbers Drawn"> {game.numbersDrawn.filter((value) => value != 100).toString()}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Draw Number for the Game">
-                                            <Button disabled={game.startTime * 1e3 > Date.now()}>
-                                                Try to Draw
-                                                Numbers
+                                )}
+                                <Card
+                                    title={`Game ${selectedGameID}`}
+                                    style={{ height: "fit-content" }}
+                                >
+                                    <Descriptions
+                                        title="Game Infomation"
+                                        column={1}
+                                    >
+                                        <Descriptions.Item label="Host Wallet">
+                                            {game.hostAddress.substring(0, 5) +
+                                                "..." +
+                                                game.hostAddress.substring(
+                                                    game.hostAddress.length - 3,
+                                                    game.hostAddress.length
+                                                )}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Card Price in Wei">
+                                            {game.cardPrice}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Start Time">
+                                            {formatTime(gameStartTime)}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Number Draw Interval in Seconds">
+                                            {gameDrawNumberInterval}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Completed?">
+                                            {" "}
+                                            {game.hasCompleted.toString()}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Pool Value in Wei">
+                                            {" "}
+                                            {game.poolValue}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Numbers Drawn">
+                                            {" "}
+                                            {game.numbersDrawn
+                                                .filter((value) => value != 100)
+                                                .toString()}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Draw Number for the Game">
+                                            <Button
+                                                disabled={
+                                                    game.startTime * 1e3 >
+                                                    Date.now()
+                                                }
+                                            >
+                                                Try to Draw Numbers
                                             </Button>
                                         </Descriptions.Item>
                                     </Descriptions>
-                                    <div style={{
-                                        alignItems: "center",
-                                        display: "flex",
-                                        flexDirection: "column"
-                                    }}>
-                                        {
-                                            !buyingCards ?
-                                                <Button disabled={game.startTime > Date.now()} onClick={
-                                                    () => {
-                                                        setBuyingCards(true);
-                                                    }
-                                                }>
-                                                    Buy a Bingo Card for this Game
-                                                </Button>
-                                                :
-                                                <div style={{
-                                                    justifyContent: "space-around",
+                                    <div
+                                        style={{
+                                            alignItems: "center",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                        }}
+                                    >
+                                        {!buyingCards ? (
+                                            <Button
+                                                disabled={
+                                                    game.startTime > Date.now()
+                                                }
+                                                onClick={() => {
+                                                    setBuyingCards(true);
+                                                }}
+                                            >
+                                                Buy a Bingo Card for this Game
+                                            </Button>
+                                        ) : (
+                                            <div
+                                                style={{
+                                                    justifyContent:
+                                                        "space-around",
                                                     display: "flex",
                                                     flexDirection: "row",
-                                                    width: "100%"
-                                                }}>
-                                                    <Button onClick={
-                                                        () => {
-                                                            if (errorMsg.length != 0) {
-                                                                setShowErrorMsg(true);
-                                                            } else {
-                                                                alert("submitted!"); // todo: handle submission
-                                                            }
+                                                    width: "100%",
+                                                }}
+                                            >
+                                                <Button
+                                                    onClick={() => {
+                                                        if (
+                                                            errorMsg.length != 0
+                                                        ) {
+                                                            setShowErrorMsg(
+                                                                true
+                                                            );
+                                                        } else {
+                                                            alert("submitted!"); // todo: handle submission
                                                         }
-                                                    }>
-                                                        Confirm
-                                                    </Button>
-                                                    <Button onClick={
-                                                        () => {
-                                                            setBuyingCards(false);
-                                                        }
-                                                    }>
-                                                        Cancle
-                                                    </Button>
-                                                </div>
-                                        }
+                                                    }}
+                                                >
+                                                    Confirm
+                                                </Button>
+                                                <Button
+                                                    onClick={() => {
+                                                        setBuyingCards(false);
+                                                    }}
+                                                >
+                                                    Cancle
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
                                 </Card>
                             </div>
                         </Drawer>
 
                         {/*Create game drawer*/}
-                        <Drawer title={"Create a Game"} placement="right" open={createGameDrawerOpen}
-                                onClose={onDrawerClose}>
-                            <div style={
-                                {
+                        <Drawer
+                            title={"Create a Game"}
+                            placement="right"
+                            open={createGameDrawerOpen}
+                            onClose={onDrawerClose}
+                        >
+                            <div
+                                style={{
                                     display: "flex",
                                     flexDirection: "column",
                                     justifyContent: "space-between",
-                                    height: "100%"
-                                }
-                            }>
+                                    height: "100%",
+                                }}
+                            >
                                 <p>
-                                    To create a game and become the host of the game, you need to specify
-                                    the Bingo card price of the game, the percentage you will get out of
-                                    the total prize pool, the start time of the game, and the number draw interval.
-                                    Please note that as the host of the game, you need to pay three times of
-                                    the card price as the initial prize pool. You may also want to set the
-                                    percentage you will get out of the prize pool wisely. If you set it too
-                                    low, it may not even cover the gas fee. If you set it too high, players
-                                    may not want to join your game.
+                                    To create a game and become the host of the
+                                    game, you need to specify the Bingo card
+                                    price of the game, the percentage you will
+                                    get out of the total prize pool, the start
+                                    time of the game, and the number draw
+                                    interval. Please note that as the host of
+                                    the game, you need to pay three times of the
+                                    card price as the initial prize pool. You
+                                    may also want to set the percentage you will
+                                    get out of the prize pool wisely. If you set
+                                    it too low, it may not even cover the gas
+                                    fee. If you set it too high, players may not
+                                    want to join your game.
                                 </p>
-                                <Card title={`New Game`} style={{height: "fit-content"}}>
-                                    <Form onValuesChange={
-                                        function (changedValues: any, values: any) {
+                                <Card
+                                    title={`New Game`}
+                                    style={{ height: "fit-content" }}
+                                >
+                                    <Form
+                                        onValuesChange={function (
+                                            changedValues: any,
+                                            values: any
+                                        ) {
                                             for (const k in values) {
                                                 if (values[k] === undefined) {
-                                                    setErrorMsg("All fields must be entered.");
+                                                    setErrorMsg(
+                                                        "All fields must be entered."
+                                                    );
                                                     return;
                                                 }
                                             }
-                                            if (!/^\d+$/.test(values["cardPrice"])) {
-                                                setErrorMsg("The card price is of invalid value.");
+                                            if (
+                                                !/^\d+$/.test(
+                                                    values["cardPrice"]
+                                                )
+                                            ) {
+                                                setErrorMsg(
+                                                    "The card price is of invalid value."
+                                                );
                                                 return;
                                             }
-                                            if (!/^\d+$/.test(values["hostFee"]) || parseInt(values["hostFee"]) > 100) {
-                                                setErrorMsg("The host fee is of invalid value.");
+                                            if (
+                                                !/^\d+$/.test(
+                                                    values["hostFee"]
+                                                ) ||
+                                                parseInt(values["hostFee"]) >
+                                                    100
+                                            ) {
+                                                setErrorMsg(
+                                                    "The host fee is of invalid value."
+                                                );
                                                 return;
                                             }
-                                            if (!/^\d+$/.test(values["turnTime"])) {
-                                                setErrorMsg("The number draw interval is of invalid value.");
+                                            if (
+                                                !/^\d+$/.test(
+                                                    values["turnTime"]
+                                                )
+                                            ) {
+                                                setErrorMsg(
+                                                    "The number draw interval is of invalid value."
+                                                );
                                                 return;
                                             }
-                                            if (!/\d\d:\d\d:\d\d/.test(values["startTime"])) {
-                                                setErrorMsg("The start time is of invalid value.");
+                                            if (
+                                                !/\d\d:\d\d:\d\d/.test(
+                                                    values["startTime"]
+                                                )
+                                            ) {
+                                                setErrorMsg(
+                                                    "The start time is of invalid value."
+                                                );
                                                 return;
                                             }
-                                            if (!/\d\d\d\d\.\d\d\.\d\d/.test(values["startDate"])) {
-                                                setErrorMsg("The start date is of invalid value.");
+                                            if (
+                                                !/\d\d\d\d\.\d\d\.\d\d/.test(
+                                                    values["startDate"]
+                                                )
+                                            ) {
+                                                setErrorMsg(
+                                                    "The start date is of invalid value."
+                                                );
                                                 return;
                                             }
 
@@ -597,115 +875,223 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
                                                 // This time parsing logic is based on code provided by OpenAI's ChatGPT.
                                                 let time = values["startTime"];
                                                 let parts = time.split(":");
-                                                const hours = parseInt(parts[0], 10);
-                                                const minutes = parseInt(parts[1], 10);
-                                                const seconds = parseInt(parts[2], 10);
-                                                const totalSeconds = (hours * 60 * 60) + (minutes * 60) + seconds;
-                                                const dateString = values["startDate"];
+                                                const hours = parseInt(
+                                                    parts[0],
+                                                    10
+                                                );
+                                                const minutes = parseInt(
+                                                    parts[1],
+                                                    10
+                                                );
+                                                const seconds = parseInt(
+                                                    parts[2],
+                                                    10
+                                                );
+                                                const totalSeconds =
+                                                    hours * 60 * 60 +
+                                                    minutes * 60 +
+                                                    seconds;
+                                                const dateString =
+                                                    values["startDate"];
                                                 parts = dateString.split(".");
-                                                const year = parseInt(parts[0], 10);
-                                                const month = parseInt(parts[1], 10) - 1; // subtract 1 since months are zero-indexed in JS
-                                                const day = parseInt(parts[2], 10);
-                                                const date = new Date(year, month, day);
-                                                values["startTime"] = Math.floor(date.getTime() / 1000) + totalSeconds;
+                                                const year = parseInt(
+                                                    parts[0],
+                                                    10
+                                                );
+                                                const month =
+                                                    parseInt(parts[1], 10) - 1; // subtract 1 since months are zero-indexed in JS
+                                                const day = parseInt(
+                                                    parts[2],
+                                                    10
+                                                );
+                                                const date = new Date(
+                                                    year,
+                                                    month,
+                                                    day
+                                                );
+                                                values["startTime"] =
+                                                    Math.floor(
+                                                        date.getTime() / 1000
+                                                    ) + totalSeconds;
                                                 delete values["startDate"];
                                             } catch (e) {
-                                                setErrorMsg("The start time or the start date is of invalid value.");
+                                                setErrorMsg(
+                                                    "The start time or the start date is of invalid value."
+                                                );
                                                 return;
                                             }
 
-                                            let eth = new BN("1000000000000000000");
-                                            values["hostFee"] = eth.mul(new BN(values["hostFee"])).div(new BN(100));
-                                            values["cardPrice"] = new BN(values["cardPrice"]);
+                                            let eth = new BN(
+                                                "1000000000000000000"
+                                            );
+                                            values["hostFee"] = eth
+                                                .mul(new BN(values["hostFee"]))
+                                                .div(new BN(100));
+                                            values["cardPrice"] = new BN(
+                                                values["cardPrice"]
+                                            );
                                             setCreateGameForm(values);
                                             setErrorMsg("");
-                                        }
-                                    }>
-                                        < Form.Item name={"cardPrice"} label={"Bingo card price in Wei"}>
-                                            <Input/>
+                                        }}
+                                    >
+                                        <Form.Item
+                                            name={"cardPrice"}
+                                            label={"Bingo card price in Wei"}
+                                        >
+                                            <Input />
                                         </Form.Item>
-                                        <Form.Item name={"hostFee"} label={"Host fee in percentage (0-100)"}>
-                                            <Input/>
+                                        <Form.Item
+                                            name={"hostFee"}
+                                            label={
+                                                "Host fee in percentage (0-100)"
+                                            }
+                                        >
+                                            <Input />
                                         </Form.Item>
-                                        <Form.Item name={"startTime"} label={"Game start time (hh:mm:ss)"}>
-                                            <Input/>
+                                        <Form.Item
+                                            name={"startTime"}
+                                            label={"Game start time (hh:mm:ss)"}
+                                        >
+                                            <Input />
                                         </Form.Item>
-                                        <Form.Item name={"startDate"} label={"Game start date (yyyy.mm.dd)"}>
-                                            <Input/>
+                                        <Form.Item
+                                            name={"startDate"}
+                                            label={
+                                                "Game start date (yyyy.mm.dd)"
+                                            }
+                                        >
+                                            <Input />
                                         </Form.Item>
-                                        <Form.Item name={"turnTime"} label={"Number draw interval in seconds"}>
-                                            <InputNumber/>
+                                        <Form.Item
+                                            name={"turnTime"}
+                                            label={
+                                                "Number draw interval in seconds"
+                                            }
+                                        >
+                                            <InputNumber />
                                         </Form.Item>
                                     </Form>
-                                    {showErrorMsg && <div style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        color: "red"
-                                    }}>{errorMsg}</div>}
-                                    <div style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        marginTop: "16px"
-                                    }}>
-                                        <Button onClick={() => {
-                                            if (errorMsg.length != 0) {
-                                                setShowErrorMsg(true);
-                                            } else {
-                                                // todo: submit the create new game request
-                                                alert("Submitted!");
-                                            }
-                                        }
-                                        }>Confirm New Game</Button>
+                                    {showErrorMsg && (
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                color: "red",
+                                            }}
+                                        >
+                                            {errorMsg}
+                                        </div>
+                                    )}
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "center",
+                                            marginTop: "16px",
+                                        }}
+                                    >
+                                        <Button
+                                            onClick={() => {
+                                                if (errorMsg.length != 0) {
+                                                    setShowErrorMsg(true);
+                                                } else {
+                                                    // todo: submit the create new game request
+                                                    alert("Submitted!");
+                                                }
+                                            }}
+                                        >
+                                            Confirm New Game
+                                        </Button>
                                     </div>
                                 </Card>
                             </div>
                         </Drawer>
 
                         {/* Joined game drawer*/}
-                        <Drawer title={"Game " + selectedGameID} placement="right"
-                                open={joinedGameDrawerOpen}
-                                onClose={onDrawerClose}>
-                            <div style={
-                                {
+                        <Drawer
+                            title={"Game " + selectedGameID}
+                            placement="right"
+                            open={joinedGameDrawerOpen}
+                            onClose={onDrawerClose}
+                        >
+                            <div
+                                style={{
                                     display: "flex",
                                     flexDirection: "column",
                                     justifyContent: "space-between",
-                                    height: "100%"
-                                }
-                            }>
+                                    height: "100%",
+                                }}
+                            >
                                 <div>
-                                    <div style={{
-                                        textAlign: "center",
-                                        fontSize: "1.5em",
-                                        marginBottom: "16px"
-                                    }}>Bingo Cards for This Game
+                                    <div
+                                        style={{
+                                            textAlign: "center",
+                                            fontSize: "1.5em",
+                                            marginBottom: "16px",
+                                        }}
+                                    >
+                                        Bingo Cards for This Game
                                     </div>
-                                    <div style={{overflow: "auto", height: "45vh"}}>
+                                    <div
+                                        style={{
+                                            overflow: "auto",
+                                            height: "45vh",
+                                        }}
+                                    >
                                         {bingoCardComponents}
                                     </div>
                                 </div>
-                                <Card title={`Game ${selectedGameID}`} style={{height: "40vh"}}>
-                                    <Descriptions title="Game Infomation" column={1}>
-                                        <Descriptions.Item
-                                            label="Host Wallet">{game.hostAddress.substring(0, 5) + "..." + game.hostAddress.substring(game.hostAddress.length - 3, game.hostAddress.length)}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Card Price in Wei">{game.cardPrice}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Start Time">{formatTime(gameStartTime)}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Number Draw Interval in Seconds">{gameDrawNumberInterval}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Completed?"> {game.hasCompleted.toString()}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Pool Value in Wei"> {game.poolValue}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Numbers Drawn"> {game.numbersDrawn.filter((value) => value != 100).toString()}</Descriptions.Item>
-                                        <Descriptions.Item
-                                            label="Draw Number for the Game"> <Button
-                                            disabled={game.startTime * 1e3 > Date.now()}>Try to Draw
-                                            Numbers</Button></Descriptions.Item>
+                                <Card
+                                    title={`Game ${selectedGameID}`}
+                                    style={{ height: "40vh" }}
+                                >
+                                    <Descriptions
+                                        title="Game Infomation"
+                                        column={1}
+                                    >
+                                        <Descriptions.Item label="Host Wallet">
+                                            {game.hostAddress.substring(0, 5) +
+                                                "..." +
+                                                game.hostAddress.substring(
+                                                    game.hostAddress.length - 3,
+                                                    game.hostAddress.length
+                                                )}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Card Price in Wei">
+                                            {game.cardPrice}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Start Time">
+                                            {formatTime(gameStartTime)}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Number Draw Interval in Seconds">
+                                            {gameDrawNumberInterval}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Completed?">
+                                            {" "}
+                                            {game.hasCompleted.toString()}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Pool Value in Wei">
+                                            {" "}
+                                            {game.poolValue}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Numbers Drawn">
+                                            {" "}
+                                            {game.numbersDrawn
+                                                .filter((value) => value != 100)
+                                                .toString()}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Draw Number for the Game">
+                                            {" "}
+                                            <Button
+                                                disabled={
+                                                    game.startTime * 1e3 >
+                                                    Date.now()
+                                                }
+                                            >
+                                                Try to Draw Numbers
+                                            </Button>
+                                        </Descriptions.Item>
                                     </Descriptions>
                                 </Card>
                             </div>
@@ -714,8 +1100,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (gamesLobbyProps: GamesLobbyProp
                 </div>
             </Layout>
         </div>
-    )
-        ;
+    );
 };
 
 // This utility function to format a JavaScript Date object is provided by OpenAI's ChatGPT.
@@ -737,12 +1122,18 @@ interface BingoCardProps {
 }
 
 interface BingoCardEditableProps {
-    onFormChanged: (changedValue: any, values: any) => void,
+    onFormChanged: (changedValue: any, values: any) => void;
     cardNumbers?: Array<number>;
 }
 
 function generateRandomCard(): Array<number> {
-    let ranges = [[1, 19], [20, 39], [40, 59], [60, 79], [80, 99]];
+    let ranges = [
+        [1, 19],
+        [20, 39],
+        [40, 59],
+        [60, 79],
+        [80, 99],
+    ];
     let nums = [];
     let generated: any = {};
     for (let i = 0; i < 5; i++) {
@@ -781,30 +1172,42 @@ const BingoCardEditable = (props: BingoCardEditableProps) => {
         let cols = [];
         for (let j = 0; j < 5; j++) {
             let idx = j * 5 + i;
-            let col = <Col flex={1} style={style} key={`${j}col`}>
-                <Form.Item name={idx.toString()} rules={[]} style={{margin: 0}}>
-                    <div style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        justifyContent: "space-evenly",
-                        height: "100%",
-                        alignItems: "center"
-                    }}>
-                        {idx == 12 ? <Input value={0} disabled={true}></Input> : (props.cardNumbers ?
-                            <Input value={props.cardNumbers[idx]}></Input> : <Input></Input>)}
-                    </div>
-                </Form.Item>
-            </Col>;
+            let col = (
+                <Col flex={1} style={style} key={`${j}col`}>
+                    <Form.Item
+                        name={idx.toString()}
+                        rules={[]}
+                        style={{ margin: 0 }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                justifyContent: "space-evenly",
+                                height: "100%",
+                                alignItems: "center",
+                            }}
+                        >
+                            {idx == 12 ? (
+                                <Input value={0} disabled={true}></Input>
+                            ) : props.cardNumbers ? (
+                                <Input value={props.cardNumbers[idx]}></Input>
+                            ) : (
+                                <Input></Input>
+                            )}
+                        </div>
+                    </Form.Item>
+                </Col>
+            );
             cols.push(col);
         }
-        rows.push(<Row gutter={[0, 0]} key={`${i}row`}>{cols}</Row>);
+        rows.push(
+            <Row gutter={[0, 0]} key={`${i}row`}>
+                {cols}
+            </Row>
+        );
     }
-    return <Form onValuesChange={
-        props.onFormChanged
-    }>
-        {rows}
-    </Form>;
-
+    return <Form onValuesChange={props.onFormChanged}>{rows}</Form>;
 };
 
 const BingoCard: React.FC<BingoCardProps> = (props: BingoCardProps) => {
@@ -826,37 +1229,58 @@ const BingoCard: React.FC<BingoCardProps> = (props: BingoCardProps) => {
         let cols = [];
         for (let j = 0; j < 5; j++) {
             let idx = j * 5 + i;
-            let col = <Col flex={1} style={
-                {
-                    ...style,
-                    backgroundColor: carArr[idx] == 0 ? "lightgreen" : tickedArr.includes(carArr[idx]) ? "yellow" : "white"
-                }
-            } key={`${j}col`}> {carArr[idx]}</Col>;
+            let col = (
+                <Col
+                    flex={1}
+                    style={{
+                        ...style,
+                        backgroundColor:
+                            carArr[idx] == 0
+                                ? "lightgreen"
+                                : tickedArr.includes(carArr[idx])
+                                ? "yellow"
+                                : "white",
+                    }}
+                    key={`${j}col`}
+                >
+                    {" "}
+                    {carArr[idx]}
+                </Col>
+            );
             cols.push(col);
         }
-        rows.push(<Row gutter={[0, 0]} key={`${i}row`}>{cols}</Row>);
+        rows.push(
+            <Row gutter={[0, 0]} key={`${i}row`}>
+                {cols}
+            </Row>
+        );
     }
-    return <>
-        <div style={{marginTop: "8px"}}>
-            {rows}
-        </div>
-    </>;
+    return (
+        <>
+            <div style={{ marginTop: "8px" }}>{rows}</div>
+        </>
+    );
 };
 
 interface GameIconProps {
     gameID: string;
-    onClick: () => void,
+    onClick: () => void;
 }
 
 const GameIcon: React.FC<GameIconProps> = function (props) {
-    return <Card
-        hoverable
-        style={{width: 240}}
-        cover={<img alt="Bingo Picture" src={require("../resources/Bingo-chips.jpg")}/>}
-        onClick={
-            props.onClick
-        }
-    >
-        <Meta title={`Game ID: ` + props.gameID}/>
-    </Card>;
+    return (
+        <Card
+            hoverable
+            style={{ width: 240 }}
+            cover={
+                <img
+                    alt="Bingo Picture"
+                    src={require("../resources/Bingo-chips.jpg")}
+                />
+            }
+            onClick={props.onClick}
+        >
+            <Meta title={`Game ID: ` + props.gameID} />
+        </Card>
+    );
 };

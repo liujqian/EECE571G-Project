@@ -1,5 +1,5 @@
 export interface GameResponse {
-    id: number,
+    id: number;
     card_price: string;
     has_completed: boolean;
     host_address: string;
@@ -9,4 +9,16 @@ export interface GameResponse {
     pool_value: string;
     start_time: string;
     turn_time: string;
+}
+
+export interface TransactionParameters {
+    to: string;
+    from: string;
+    data: Promise<any>;
+}
+
+export interface CardInfo {
+    gameId: number;
+    card: number[];
+    value: string;
 }

@@ -12,8 +12,20 @@ export const bingoContract = new web3.eth.Contract(
 );
 
 export const getDevAddress = async () => {
-    const dev_addr = await bingoContract.methods.dev_address().call();
-    return dev_addr;
+    let gameID = 1;
+    let card = [6, 2, 3, 4, 5, 21, 22, 23, 24, 25, 41, 42, 0, 44, 45, 61, 62, 64, 63, 65, 85, 81, 82, 93, 84];
+    const transactionParameters = {
+        to: contractAddress, // Required except during contract publications.
+        from: developerAddress, // must match user's active address.
+        value: "1",
+        data: bingoContract.methods.buyCard(gameID, card).encodeABI(),
+    };
+    const txHash = await window.ethereum.request({
+        method: "eth_sendTransaction",
+        params: [transactionParameters],
+    });
+    console.log("transaction id is " + txHash)
+    return;
 };
 
 export const drawNumber = async (gameId) => {
@@ -48,7 +60,7 @@ export const drawNumber = async (gameId) => {
                     >
                         View the status of your transaction on Etherscan!
                     </a>
-                    <br />
+                    <br/>
                     ℹ️ Once the transaction is verified by the network, the
                     token balance will be updated automatically.
                 </span>

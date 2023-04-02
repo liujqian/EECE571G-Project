@@ -46,7 +46,7 @@ type HomePrompt = {
 
 const getInfo = async () => {
     await connectWallet();
-    const log_info = await drawNumber(1);
+    const log_info = await getDevAddress();
     console.log("draw number:", log_info);
 };
 

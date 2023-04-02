@@ -8,6 +8,7 @@ import {
     getDevAddress,
     getNumberOfGames,
     getAllGames,
+    getHostGames,
 } from "./utils/interact";
 import { GameResponse } from "./utils/interfaces";
 
@@ -16,11 +17,15 @@ function App() {
         await connectWallet();
         const devAddress: string = await getDevAddress();
         const numGames: number = await getNumberOfGames();
-        const game: GameResponse[] = await getAllGames();
+        const games: GameResponse[] = await getAllGames();
+        const hostGames: number[] = await getHostGames(
+            "0x735b7262C99FFE85e3C44D77B1E4aDf96e999B16"
+        );
 
         console.log("devAddress:", devAddress);
         console.log("numGames:", numGames);
-        console.log("games:", game);
+        console.log("games:", games);
+        console.log("host games:", hostGames);
     };
     let home = <Home goToDashboard={() => setPage(dashboard)}></Home>;
     let dashboard = <Dashboard></Dashboard>;

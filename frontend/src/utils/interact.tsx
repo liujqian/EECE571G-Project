@@ -51,6 +51,50 @@ export const getAllGames = async (): Promise<GameResponse[]> => {
     return games;
 };
 
+export const getPlayerGames = async (address: string): Promise<number[]> => {
+    const playerGames: number[] = [];
+    let game: number | null = null;
+
+    let i = 0;
+    while (true) {
+        try {
+            const game = await bingoContract.methods
+                .player_games(address, i)
+                .call();
+            if (game !== null) {
+                playerGames.push(game);
+            }
+            i++;
+        } catch (error) {
+            console.error(`Error fetching game ${i}: ${error}`);
+            break;
+        }
+    }
+    return playerGames;
+};
+
+export const getHostGames = async (address: string): Promise<number[]> => {
+    const hostGames: number[] = [];
+    let game: number | null = null;
+
+    let i = 0;
+    while (true) {
+        try {
+            const game = await bingoContract.methods
+                .host_games(address, i)
+                .call();
+            if (game !== null) {
+                hostGames.push(game);
+            }
+            i++;
+        } catch (error) {
+            console.error(`Error fetching game ${i}: ${error}`);
+            break;
+        }
+    }
+    return hostGames;
+};
+
 // export const getDevAddress2 = async () => {
 //     let gameID = 1;
 //     let card = [

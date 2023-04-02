@@ -54,7 +54,7 @@ export const Dashboard: React.FC = () => {
 
     useEffect(() => {
         getCurrentWalletConnected().then((wallet) => {
-            if (!wallet.address) {
+            if (wallet.address) {
                 setAddress(wallet.address);
                 setContent(
                     <GamesGallery

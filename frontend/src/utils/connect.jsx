@@ -3,19 +3,13 @@ const infuraKey = process.env.REACT_APP_INFURA_KEY;
 const web3 = new Web3("https://polygon-mumbai.infura.io/v3/" + infuraKey);
 
 export function addWalletListener(callback) {
-    window.ethereum.on(
-        "accountsChanged",
-        callback
-    );
-    window.ethereum.on(
-        "disconnect",
-        callback
-    );
+    window.ethereum.on("accountsChanged", callback);
+    window.ethereum.on("disconnect", callback);
 }
 
-export function removeWalletListener(callback){
-    window.ethereum.removeListener('accountsChanged', callback);
-    window.ethereum.removeListener('disconnect', callback);
+export function removeWalletListener(callback) {
+    window.ethereum.removeListener("accountsChanged", callback);
+    window.ethereum.removeListener("disconnect", callback);
 }
 
 export function isMetaMaskPresent() {
@@ -35,6 +29,7 @@ export const connectWallet = async () => {
                 status: "👆🏽 input the transfer to addresst in the text-field above.",
                 address: addressArray[0],
             };
+            console.log(obj);
             return obj;
         } catch (err) {
             return {

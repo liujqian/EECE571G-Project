@@ -4,27 +4,66 @@ const web3 = new Web3("https://polygon-mumbai.infura.io/v3/" + infuraKey);
 const contractABI = require("./contractABI.json");
 const contractAddress = "0xF56819d9FAf22Ba131dC3227E606f0173558F52F";
 
+const developerAddress = "0xB8B97b070C78c9dfc6a6BA03DfCA805E676BF725";
+
 export const bingoContract = new web3.eth.Contract(
     contractABI,
     contractAddress
 );
 
-export const loadGames = async () => {
-    console.log(infuraKey);
-    console.log("aaa");
-    // const games = await bingoContract.methods
-    //   .drawNumber(1)
-    //   .send({ from: "0xb8b97b070c78c9dfc6a6ba03dfca805e676bf725" });
-    const dev_addr = await bingoContract.methods
-        .num_games()
-        .call()
-        .then((result) => console.log("res", result))
-        .catch((error) => console.error(error));
+export const getDevAddress = async () => {
+    const dev_addr = await bingoContract.methods.dev_address().call();
+    return dev_addr;
 };
 
-const event = bingoContract.events.NumberDraw();
+export const drawNumber = async (gameId) => {
+    const fromAddress = 0x735b7262c99ffe85e3c44d77b1e4adf96e999b16;
+    // console.log(window.ethereum);
+    if (!window.ethereum) {
+        return {
+            status: "💡 Connect your Metamask wallet to update the message on the blockchain.",
+        };
+    }
 
-event.on("data", (eventData) => {
+    // //set up transaction parameters
+    const transactionParameters = {
+        to: contractAddress, // Required except during contract publications.
+        from: fromAddress, // must match user's active address.
+        data: bingoContract.methods.drawNumber(gameId).send(),
+    };
+
+    //sign the transaction
+    try {
+        const txHash = await window.ethereum.request({
+            method: "eth_sendTransaction",
+            params: [transactionParameters],
+        });
+        return {
+            status: (
+                <span>
+                    ✅{" "}
+                    <a
+                        target="_blank"
+                        href={`https://mumbai.polygonscan.com/tx/${txHash}`}
+                    >
+                        View the status of your transaction on Etherscan!
+                    </a>
+                    <br />
+                    ℹ️ Once the transaction is verified by the network, the
+                    token balance will be updated automatically.
+                </span>
+            ),
+        };
+    } catch (error) {
+        return {
+            status: "😥 " + error.message,
+        };
+    }
+};
+
+const eventDrawNumber = bingoContract.events.NumberDraw();
+
+eventDrawNumber.on("data", (eventData) => {
     console.log("Value changed:", eventData.returnValues.newValue);
 });
 

@@ -2,7 +2,8 @@ import React from "react";
 import { Button, Col, Image, Row } from "antd";
 
 import { Layout, Space } from "antd";
-import { bingoContract, loadGames } from "../utils/interact";
+import { bingoContract, getDevAddress, drawNumber } from "../utils/interact";
+import { connectWallet } from "../utils/connect";
 
 const { Header, Footer, Sider, Content } = Layout;
 
@@ -43,9 +44,10 @@ type HomePrompt = {
     goToDashboard: () => void;
 };
 
-const getGames = async () => {
-    const games = await loadGames();
-    console.log("fetched!");
+const getInfo = async () => {
+    await connectWallet();
+    const log_info = await drawNumber(1);
+    console.log("draw number:", log_info);
 };
 
 export function Home(homePrompt: HomePrompt): JSX.Element {
@@ -110,7 +112,7 @@ export function Home(homePrompt: HomePrompt): JSX.Element {
                                             >
                                                 What is Bingo571G?
                                             </p>
-                                            <button onClick={getGames}>
+                                            <button onClick={getInfo}>
                                                 logger
                                             </button>
                                             <p

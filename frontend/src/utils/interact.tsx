@@ -1,4 +1,10 @@
-import { CardInfo, GameResponse, TransactionParameters } from "./interfaces";
+import { connectWallet } from "./connect";
+import {
+    CardInfo,
+    GameRequest,
+    GameResponse,
+    TransactionParameters,
+} from "./interfaces";
 
 const Web3 = require("web3");
 const infuraKey = process.env.REACT_APP_INFURA_KEY;
@@ -105,7 +111,6 @@ export const drawNumber = async (
     fromAddress: string,
     gameId: number
 ): Promise<string> => {
-    // const FromAddressTest = "0x735b7262c99ffe85e3c44d77b1e4adf96e999b16";
     if (!window.ethereum) {
         return "💡 Connect your Metamask wallet to update the message on the blockchain.";
     }
@@ -137,7 +142,7 @@ export const buyCard = async (
         return "💡 Connect your Metamask wallet to update the message on the blockchain.";
     }
 
-    const transactionParameters = {
+    const transactionParameters: TransactionParameters = {
         to: contractAddress, // Required except during contract publications.
         from: fromAddress, // must match user's active address.
         value: cardInfo.value,
@@ -157,6 +162,86 @@ export const buyCard = async (
         return "😥 " + error.message;
     }
 };
+
+export const createGame = async (
+    fromAddress: string,
+    gameInfo: GameRequest
+): Promise<string> => {
+    if (!window.ethereum) {
+        return "💡 Connect your Metamask wallet to update the message on the blockchain.";
+    }
+
+    const transactionParameters: TransactionParameters = {
+        to: contractAddress, // Required except during contract publications.
+        from: fromAddress, // must match user's active address.
+        value: gameInfo.value,
+        data: bingoContract.methods
+            .createGame(
+                gameInfo.card_price,
+                gameInfo.host_fee,
+                gameInfo.start_time,
+                gameInfo.turn_time
+            )
+            .encodeABI(),
+    };
+
+    //sign the transaction
+    try {
+        const txHash = await window.ethereum.request({
+            method: "eth_sendTransaction",
+            params: [transactionParameters],
+        });
+        return txHash;
+    } catch (error: any) {
+        return "😥 " + error.message;
+    }
+};
+
+// Simple test function for wrappers
+const callLogger = async () => {
+    await connectWallet();
+    const devAddress: string = await getDevAddress();
+    const numGames: number = await getNumberOfGames();
+    const games: GameResponse[] = await getAllGames();
+    const hostGames: number[] = await getHostGames(
+        "0x735b7262C99FFE85e3C44D77B1E4aDf96e999B16"
+    );
+    // const drawNumTxHash: string = await drawNumber("", 1);
+
+    // const cardInfoTest: CardInfo = {
+    //     gameId: 1,
+    //     card: [
+    //         6, 2, 3, 4, 5, 21, 22, 23, 24, 25, 41, 42, 0, 44, 45, 61, 62,
+    //         64, 63, 65, 85, 81, 82, 93, 84,
+    //     ],
+    //     value: "1",
+    // };
+
+    // const buyCardTxHash: string = await buyCard("", cardInfoTest);
+
+    const gameInfoTest: GameRequest = {
+        card_price: "1",
+        host_fee: "10",
+        start_time: "1680427753",
+        turn_time: "3600",
+        value: "10",
+    };
+
+    const createGameTxHash: string = await createGame(
+        "0x735b7262C99FFE85e3C44D77B1E4aDf96e999B16",
+        gameInfoTest
+    );
+
+    console.log("devAddress:", devAddress);
+    console.log("numGames:", numGames);
+    console.log("games:", games);
+    console.log("host games:", hostGames);
+    // console.log("draw number transaction hash", drawNumTxHash);
+    // console.log("buy card trasaction hash", buyCardTxHash);
+    console.log("create game transaction hash", createGameTxHash);
+};
+
+// ToDo: add event listeners
 
 // const eventDrawNumber = bingoContract.events.NumberDraw();
 

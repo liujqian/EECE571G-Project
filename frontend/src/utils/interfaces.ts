@@ -11,9 +11,18 @@ export interface GameResponse {
     turn_time: string;
 }
 
+export interface GameRequest {
+    card_price: string;
+    host_fee: string;
+    start_time: string;
+    turn_time: string;
+    value: string;
+}
+
 export interface TransactionParameters {
     to: string;
     from: string;
+    value?: string;
     data: Promise<any>;
 }
 

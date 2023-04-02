@@ -1,13 +1,9 @@
-import { connectWallet } from "./connect";
-import {
-    CardInfo,
-    GameRequest,
-    GameResponse,
-    TransactionParameters,
-} from "./interfaces";
+import {connectWallet} from "./connect";
+import {CardInfo, GameRequest, GameResponse, TransactionParameters,} from "./interfaces";
 
 const Web3 = require("web3");
 const infuraKey = process.env.REACT_APP_INFURA_KEY;
+console.log("Infura key is " + infuraKey);
 const web3 = new Web3("https://polygon-mumbai.infura.io/v3/" + infuraKey);
 const contractABI = require("./contractABI.json");
 const contractAddress = "0xF56819d9FAf22Ba131dC3227E606f0173558F52F";
@@ -61,48 +57,41 @@ export const getAllGames = async (): Promise<GameResponse[]> => {
     return games;
 };
 
-export const getPlayerGames = async (address: string): Promise<number[]> => {
-    const playerGames: number[] = [];
-    let game: number | null = null;
-
-    let i = 0;
-    while (true) {
-        try {
-            const game = await bingoContract.methods
-                .player_games(address, i)
-                .call();
-            if (game !== null) {
-                playerGames.push(game);
-            }
-            i++;
-        } catch (error) {
-            console.error(`Error fetching game ${i}: ${error}`);
-            break;
-        }
+export const getAllPlayerGames = async (address: string): Promise<GameResponse[]> => {
+    let playerGames = await getPlayerGames(address);
+    const games: GameResponse[] = [];
+    for (let gameID of playerGames) {
+        const curGame: GameResponse = await getGame(gameID);
+        games.push(curGame);
     }
-    return playerGames;
+    return games;
+};
+
+export const checkGameStatus = async (gameID: number): Promise<GameResponse> => {
+    const gameDetails = await bingoContract.methods.checkGameStatus(gameID).call();
+    return {
+        id: gameID,
+        card_price: gameDetails.cardPrice,
+        has_completed: gameDetails.hasCompleted,
+        host_address: gameDetails.hostAddress,
+        host_fee: gameDetails.hostFee,
+        pool_value: gameDetails.poolValue,
+        start_time: gameDetails.startTime,
+        turn_time: gameDetails.turnTime,
+        drawn_numbers: gameDetails.numbersDrawn
+    };
+};
+
+export const getPlayerGames = async (address: string): Promise<number[]> => {
+    return await bingoContract.methods
+        .getPlayerGames(address)
+        .call();
 };
 
 export const getHostGames = async (address: string): Promise<number[]> => {
-    const hostGames: number[] = [];
-    let game: number | null = null;
-
-    let i = 0;
-    while (true) {
-        try {
-            const game = await bingoContract.methods
-                .host_games(address, i)
-                .call();
-            if (game !== null) {
-                hostGames.push(game);
-            }
-            i++;
-        } catch (error) {
-            console.error(`Error fetching game ${i}: ${error}`);
-            break;
-        }
-    }
-    return hostGames;
+    return await bingoContract.methods
+        .getHostGames(address,)
+        .call();
 };
 
 export const drawNumber = async (

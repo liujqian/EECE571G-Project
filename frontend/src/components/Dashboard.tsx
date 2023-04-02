@@ -1,4 +1,4 @@
-import React, { CSSProperties, useEffect, useState } from "react";
+import React, {CSSProperties, useEffect, useState} from "react";
 import {
     addWalletListener,
     connectWallet,
@@ -6,8 +6,8 @@ import {
     removeWalletListener,
 } from "../utils/connect";
 
-import { UserOutlined } from "@ant-design/icons";
-import { getCards, getGameInfo, getTotalGameCount } from "../utils/stubs";
+import {UserOutlined} from "@ant-design/icons";
+import {getCards, getGameInfo} from "../utils/stubs";
 import {
     Avatar,
     Button,
@@ -27,23 +27,24 @@ import {
     theme,
 } from "antd";
 import {Spin} from "antd/lib";
+import {GameResponse} from "../utils/interfaces";
+import {checkGameStatus, getAllGames, getAllPlayerGames, getGame, getPlayerGames} from "../utils/interact";
 
 const Web3 = require("web3");
 const BN = Web3.utils.BN;
 
-const { Meta } = Card;
-const { Header, Content, Footer, Sider } = Layout;
+const {Meta} = Card;
+const {Header, Content, Footer, Sider} = Layout;
 
 export const Dashboard: React.FC = () => {
     let [address, setAddress] = useState("");
     const {
-        token: { colorBgContainer },
+        token: {colorBgContainer},
     } = theme.useToken();
-    let [content, setContent] = useState(Login({ setAddress: setAddress }));
+    let [content, setContent] = useState(Login({setAddress: setAddress}));
     let [selectedMenuKey, setSelectedMenuKey] = useState("1");
 
     function changeAccountCallback(accounts: Array<string>) {
-        console.log("Account changed.");
         if (accounts.length > 0) {
             setAddress(accounts[0]);
         } else {
@@ -67,7 +68,7 @@ export const Dashboard: React.FC = () => {
                 addWalletListener(changeAccountCallback);
             } else {
                 setAddress("");
-                setContent(Login({ setAddress: setAddress }));
+                setContent(Login({setAddress: setAddress}));
             }
         });
     }, [address]);
@@ -84,7 +85,7 @@ export const Dashboard: React.FC = () => {
                     }}
                 >
                     <div
-                        style={{ float: "left", color: "white", fontSize: 24 }}
+                        style={{float: "left", color: "white", fontSize: 24}}
                     >
                         BINGO571G
                     </div>
@@ -130,7 +131,7 @@ export const Dashboard: React.FC = () => {
                                 },
                             },
                         ]}
-                        style={{ float: "left", width: "20vw" }}
+                        style={{float: "left", width: "20vw"}}
                     />
                 </div>
                 <div
@@ -145,19 +146,19 @@ export const Dashboard: React.FC = () => {
                         <Avatar
                             shape="square"
                             size="large"
-                            icon={<UserOutlined />}
+                            icon={<UserOutlined/>}
                         />
                     )}
                     {address.length > 0 &&
                         address.substring(0, 5) +
-                            "..." +
-                            address.substring(
-                                address.length - 3,
-                                address.length
-                            )}
+                        "..." +
+                        address.substring(
+                            address.length - 3,
+                            address.length
+                        )}
                 </div>
             </Header>
-            <Content style={{ padding: "0 50px" }}>
+            <Content style={{padding: "0 50px"}}>
                 <div
                     className="site-layout-content"
                     style={{
@@ -170,7 +171,7 @@ export const Dashboard: React.FC = () => {
                     {content}
                 </div>
             </Content>
-            <Footer style={{ textAlign: "center" }}>
+            <Footer style={{textAlign: "center"}}>
                 Created by Jingqian Liu
             </Footer>
         </Layout>
@@ -182,7 +183,7 @@ const Login: React.FC = (loginProps: any) => {
         <Card
             title="Login to your wallet"
             bordered={true}
-            style={{ width: 300 }}
+            style={{width: 300}}
         >
             <div
                 style={{
@@ -249,7 +250,6 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     };
 
     let [page, setPage] = useState(1);
-    let [totalGameCount, setTotalGameCount] = useState(0);
     let [joinedGameDrawerOpen, setJoinedGameDrawerOpen] = useState(false);
     let [selectedGameID, setSelectedGameID] = useState("");
     let [game, setGame] = useState(defaultGame);
@@ -265,6 +265,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     let [waiting, setWaiting] = useState(false);
     let [result, setResult] = useState("");
     let [modalOpen, setModalOpen] = useState(false);
+    let [games, setGames] = useState([] as Array<GameResponse>);
     let numberSelectCallback = function (changedValue: any, values: any) {
         setShowErrorMsg(false);
         let nums = [];
@@ -292,24 +293,43 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         setSelectedNumbers(nums);
     };
     let [numberInputForm, setNumberInputForm] = useState(
-        <BingoCardEditable onFormChanged={numberSelectCallback} />
+        <BingoCardEditable onFormChanged={numberSelectCallback}/>
     );
 
     useEffect(
         function () {
-            getTotalGameCount().then(function (count) {
-                setTotalGameCount(count);
-            });
+            let gameGetter = gamesLobbyProps.lobbyType == "allGames" ? getAllGames : getAllPlayerGames;
+            let gamesPromise = gameGetter(gamesLobbyProps.address);
+            gamesPromise.then(
+                function (games: Array<GameResponse>) {
+                    setGames(games);
+                }
+            );
         },
-        [totalGameCount]
+        [gamesLobbyProps.lobbyType]
     );
 
     useEffect(
         function () {
             if (selectedGameID !== "") {
-                getGameInfo(selectedGameID).then(function (game: Game) {
-                    setGame(game);
-                });
+                let gottenGame = checkGameStatus(parseInt(selectedGameID));
+                gottenGame.then(
+                    function (
+                        gameResponse: GameResponse
+                    ) {
+                        const game: Game = {
+                            cardPrice: parseInt(gameResponse.card_price),
+                            hasCompleted: gameResponse.has_completed,
+                            hostAddress: gameResponse.host_address,
+                            hostFee: parseInt(new BN(gameResponse.host_fee).div(new BN("1000000000000000000")).mul(new BN(100)).toString()),
+                            numbersDrawn: gameResponse.drawn_numbers!,
+                            poolValue: parseInt(gameResponse.pool_value),
+                            startTime: parseInt(gameResponse.start_time),
+                            turnTime: parseInt(gameResponse.turn_time),
+                        };
+                        setGame(game);
+                    }
+                );
             }
         },
         [selectedGameID]
@@ -328,6 +348,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         [selectedGameID]
     );
 
+    let totalGameCount = games.length;
     let numGameOnPage =
         page * pageSize > totalGameCount ? totalGameCount % pageSize : pageSize;
     let row1: Array<JSX.Element> = [];
@@ -343,7 +364,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                         }}
                     >
                         <GameIcon
-                            gameID={i.toString()}
+                            gameID={games[(page - 1) * 6 + i].id.toString()}
                             onClick={function () {
                                 if (
                                     gamesLobbyProps.lobbyType == "joinedGames"
@@ -421,7 +442,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         setSelectedGameID("");
         setCards([]);
         setNumberInputForm(
-            <BingoCardEditable onFormChanged={numberSelectCallback} />
+            <BingoCardEditable onFormChanged={numberSelectCallback}/>
         );
         setCreateGameForm({});
         setShowErrorMsg(false);
@@ -440,15 +461,15 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
             }}
         >
             <Radio.Button value="a">
-                <div style={{ width: "90px", textAlign: "center" }}>All</div>
+                <div style={{width: "90px", textAlign: "center"}}>All</div>
             </Radio.Button>
             <Radio.Button value="b">
-                <div style={{ width: "90px", textAlign: "center" }}>
+                <div style={{width: "90px", textAlign: "center"}}>
                     Finished
                 </div>
             </Radio.Button>
             <Radio.Button value="c">
-                <div style={{ width: "90px", textAlign: "center" }}>
+                <div style={{width: "90px", textAlign: "center"}}>
                     Unfinished
                 </div>
             </Radio.Button>
@@ -466,20 +487,20 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
             }}
         >
             <Radio.Button value="d">
-                <div style={{ width: "90px", textAlign: "center" }}>All</div>
+                <div style={{width: "90px", textAlign: "center"}}>All</div>
             </Radio.Button>
             <Radio.Button value="e">
-                <div style={{ width: "90px", textAlign: "center" }}>
+                <div style={{width: "90px", textAlign: "center"}}>
                     Started
                 </div>
             </Radio.Button>
             <Radio.Button value="f">
-                <div style={{ width: "90px", textAlign: "center" }}>
+                <div style={{width: "90px", textAlign: "center"}}>
                     Unstarted
                 </div>
             </Radio.Button>
             <Radio.Button value="f">
-                <div style={{ width: "90px", textAlign: "center" }}>
+                <div style={{width: "90px", textAlign: "center"}}>
                     Hosted By Me
                 </div>
             </Radio.Button>
@@ -487,7 +508,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     );
 
     const {
-        token: { colorBgContainer, borderRadius, colorBorder },
+        token: {colorBgContainer, borderRadius, colorBorder},
     } = theme.useToken();
 
     return (
@@ -505,7 +526,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
             >
                 {
                     waiting &&
-                    <div style={{height:"30vh"}}>
+                    <div style={{height: "30vh"}}>
                         <Spin tip="Processing" size="large" style={{marginTop: "32px", marginBottom: "32px"}}>
                             <div className="content"/>
                         </Spin>
@@ -544,11 +565,11 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                             : allGameFilterRadio}
                     </div>
                 </Sider>
-                <div style={{ alignItems: "self-start" }}>
+                <div style={{alignItems: "self-start"}}>
                     <Card
                         title={title}
                         bordered={true}
-                        style={{ width: "fit-content", height: "100%" }}
+                        style={{width: "fit-content", height: "100%"}}
                     >
                         {gamesLobbyProps.lobbyType == "allGames" && (
                             <>
@@ -570,11 +591,11 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                         Create a New Game{" "}
                                     </Button>
                                 </div>
-                                <Divider />
+                                <Divider/>
                             </>
                         )}
 
-                        <Row gutter={[64, 64]} style={{ width: "75vw" }}>
+                        <Row gutter={[64, 64]} style={{width: "75vw"}}>
                             {row1}
                             {row2}
                         </Row>
@@ -639,7 +660,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                             }}
                                         >
                                             {showErrorMsg && (
-                                                <p style={{ color: "red" }}>
+                                                <p style={{color: "red"}}>
                                                     {errorMsg}
                                                 </p>
                                             )}
@@ -681,7 +702,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                     );
                                                     setShowErrorMsg(false);
                                                 }}
-                                                style={{ marginTop: "16px" }}
+                                                style={{marginTop: "16px"}}
                                             >
                                                 Reset the Card
                                             </Button>
@@ -690,7 +711,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                 )}
                                 <Card
                                     title={`Game ${selectedGameID}`}
-                                    style={{ height: "fit-content" }}
+                                    style={{height: "fit-content"}}
                                 >
                                     <Descriptions
                                         title="Game Infomation"
@@ -765,19 +786,19 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                     flexDirection: "row",
                                                     width: "100%"
                                                 }}>
-                                                    <Button onClick={
-                                                        () => {
-                                                            if (errorMsg.length != 0) {
-                                                                setShowErrorMsg(true);
-                                                            } else {
-                                                                setWaiting(true);
-                                                                setModalOpen(true);
-                                                                setTimeout(() => {
-                                                                    setWaiting(false);
-                                                                }, 5000);
-                                                            }
+                                                <Button onClick={
+                                                    () => {
+                                                        if (errorMsg.length != 0) {
+                                                            setShowErrorMsg(true);
+                                                        } else {
+                                                            setWaiting(true);
+                                                            setModalOpen(true);
+                                                            setTimeout(() => {
+                                                                setWaiting(false);
+                                                            }, 5000);
                                                         }
                                                     }
+                                                }
                                                 >
                                                     Confirm
                                                 </Button>
@@ -827,7 +848,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                 </p>
                                 <Card
                                     title={`New Game`}
-                                    style={{ height: "fit-content" }}
+                                    style={{height: "fit-content"}}
                                 >
                                     <Form
                                         onValuesChange={function (
@@ -857,7 +878,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                     values["hostFee"]
                                                 ) ||
                                                 parseInt(values["hostFee"]) >
-                                                    100
+                                                100
                                             ) {
                                                 setErrorMsg(
                                                     "The host fee is of invalid value."
@@ -962,7 +983,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                             name={"cardPrice"}
                                             label={"Bingo card price in Wei"}
                                         >
-                                            <Input />
+                                            <Input/>
                                         </Form.Item>
                                         <Form.Item
                                             name={"hostFee"}
@@ -970,13 +991,13 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                 "Host fee in percentage (0-100)"
                                             }
                                         >
-                                            <Input />
+                                            <Input/>
                                         </Form.Item>
                                         <Form.Item
                                             name={"startTime"}
                                             label={"Game start time (hh:mm:ss)"}
                                         >
-                                            <Input />
+                                            <Input/>
                                         </Form.Item>
                                         <Form.Item
                                             name={"startDate"}
@@ -984,7 +1005,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                 "Game start date (yyyy.mm.dd)"
                                             }
                                         >
-                                            <Input />
+                                            <Input/>
                                         </Form.Item>
                                         <Form.Item
                                             name={"turnTime"}
@@ -992,7 +1013,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                 "Number draw interval in seconds"
                                             }
                                         >
-                                            <InputNumber />
+                                            <InputNumber/>
                                         </Form.Item>
                                     </Form>
                                     {showErrorMsg && (
@@ -1068,7 +1089,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                 </div>
                                 <Card
                                     title={`Game ${selectedGameID}`}
-                                    style={{ height: "40vh" }}
+                                    style={{height: "40vh"}}
                                 >
                                     <Descriptions
                                         title="Game Infomation"
@@ -1201,7 +1222,7 @@ const BingoCardEditable = (props: BingoCardEditableProps) => {
                     <Form.Item
                         name={idx.toString()}
                         rules={[]}
-                        style={{ margin: 0 }}
+                        style={{margin: 0}}
                     >
                         <div
                             style={{
@@ -1262,8 +1283,8 @@ const BingoCard: React.FC<BingoCardProps> = (props: BingoCardProps) => {
                             carArr[idx] == 0
                                 ? "lightgreen"
                                 : tickedArr.includes(carArr[idx])
-                                ? "yellow"
-                                : "white",
+                                    ? "yellow"
+                                    : "white",
                     }}
                     key={`${j}col`}
                 >
@@ -1281,7 +1302,7 @@ const BingoCard: React.FC<BingoCardProps> = (props: BingoCardProps) => {
     }
     return (
         <>
-            <div style={{ marginTop: "8px" }}>{rows}</div>
+            <div style={{marginTop: "8px"}}>{rows}</div>
         </>
     );
 };
@@ -1295,7 +1316,7 @@ const GameIcon: React.FC<GameIconProps> = function (props) {
     return (
         <Card
             hoverable
-            style={{ width: 240 }}
+            style={{width: 240}}
             cover={
                 <img
                     alt="Bingo Picture"
@@ -1304,7 +1325,7 @@ const GameIcon: React.FC<GameIconProps> = function (props) {
             }
             onClick={props.onClick}
         >
-            <Meta title={`Game ID: ` + props.gameID} />
+            <Meta title={`Game ID: ` + props.gameID}/>
         </Card>
     );
 };

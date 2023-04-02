@@ -4,11 +4,12 @@ export interface GameResponse {
     has_completed: boolean;
     host_address: string;
     host_fee: string;
-    is_valid: boolean;
-    last_draw_time: string;
+    is_valid?: boolean;
+    last_draw_time?: string;
     pool_value: string;
     start_time: string;
     turn_time: string;
+    drawn_numbers?: Array<number>;
 }
 
 export interface GameRequest {

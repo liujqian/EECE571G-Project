@@ -12,8 +12,6 @@ const web3 = new Web3("https://polygon-mumbai.infura.io/v3/" + infuraKey);
 const contractABI = require("./contractABI.json");
 const contractAddress = "0xF56819d9FAf22Ba131dC3227E606f0173558F52F";
 
-const developerAddress = "0xB8B97b070C78c9dfc6a6BA03DfCA805E676BF725";
-
 declare global {
     interface Window {
         ethereum: any;

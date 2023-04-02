@@ -1,15 +1,13 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import "./App.css";
-import {Home} from "./components/Home";
-import {Dashboard} from "./components/Dashboard";
+import { Home } from "./components/Home";
+import { Dashboard } from "./components/Dashboard";
 
 function App() {
     let home = <Home goToDashboard={() => setPage(dashboard)}></Home>;
     let dashboard = <Dashboard></Dashboard>;
     let [page, setPage] = useState(home);
-    return (
-        page
-    );
+    return page;
 }
 
 export default App;

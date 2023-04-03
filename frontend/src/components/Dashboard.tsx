@@ -30,7 +30,7 @@ import {Spin} from "antd/lib";
 import {GameResponse} from "../utils/interfaces";
 import {
     buyCard,
-    checkGameStatus, createGame,
+    checkGameStatus, createGame, drawNumber,
     getAllGames,
     getAllPlayerGames,
     getGame,
@@ -263,7 +263,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     let [selectedGameID, setSelectedGameID] = useState("");
     let [game, setGame] = useState(defaultGame);
     let [cards, setCards] = useState([] as Array<Array<number>>);
-    let [gameFilter, setGameFilter] = useState(() => true);
+    let [gameFilter, setGameFilter] = useState("noFilter");
     let [generalGameDrawerOpen, setGeneralGameDrawerOpen] = useState(false);
     let [buyingCards, setBuyingCards] = useState(false);
     let [selectedNumbers, setSelectedNumbers] = useState([] as Array<number>);
@@ -306,17 +306,33 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         <BingoCardEditable onFormChanged={numberSelectCallback}/>
     );
 
+
+    let filters: { [filterName: string]: (game: GameResponse) => boolean } = {
+        noFilter: function (game: GameResponse): boolean {
+            return true;
+        },
+        started: function (game: GameResponse): boolean {
+            return parseInt(game.start_time) > (Date.now() / 1e3);
+        },
+        unstarted: (game: GameResponse) => parseInt(game.start_time) < (Date.now() / 1e3),
+        hostedByMe: (game: GameResponse) => game.host_address.toLowerCase() === gamesLobbyProps.address.toLowerCase(),
+        finished: (game: GameResponse) => game.has_completed,
+        unfinished: (game: GameResponse) => !game.has_completed,
+    };
+
     useEffect(
         function () {
             let gameGetter = gamesLobbyProps.lobbyType == "allGames" ? getAllGames : getAllPlayerGames;
             let gamesPromise = gameGetter(gamesLobbyProps.address);
             gamesPromise.then(
                 function (games: Array<GameResponse>) {
-                    setGames(games);
+                    let filteredGames = games.filter(filters[gameFilter]);
+                    console.log(filteredGames);
+                    setGames(filteredGames);
                 }
             );
         },
-        [games.length, gamesLobbyProps.lobbyType]
+        [games.length, gamesLobbyProps.lobbyType, gameFilter]
     );
 
     useEffect(
@@ -460,6 +476,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         setModalPrompt("");
     };
 
+
     let joinedGameFilterRadio = (
         <Radio.Group
             defaultValue="a"
@@ -471,15 +488,27 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                 alignItems: "center",
             }}
         >
-            <Radio.Button value="a">
+            <Radio.Button value="a" onClick={
+                () => {
+                    setGameFilter("noFilter");
+                }
+            }>
                 <div style={{width: "90px", textAlign: "center"}}>All</div>
             </Radio.Button>
-            <Radio.Button value="b">
+            <Radio.Button value="b" onClick={
+                () => {
+                    setGameFilter("finished");
+                }
+            }>
                 <div style={{width: "90px", textAlign: "center"}}>
                     Finished
                 </div>
             </Radio.Button>
-            <Radio.Button value="c">
+            <Radio.Button value="c" onClick={
+                () => {
+                    setGameFilter("unfinished");
+                }
+            }>
                 <div style={{width: "90px", textAlign: "center"}}>
                     Unfinished
                 </div>
@@ -497,20 +526,36 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                 alignItems: "center",
             }}
         >
-            <Radio.Button value="d">
+            <Radio.Button value="d" onClick={
+                () => {
+                    setGameFilter("noFilter");
+                }
+            }>
                 <div style={{width: "90px", textAlign: "center"}}>All</div>
             </Radio.Button>
-            <Radio.Button value="e">
+            <Radio.Button value="e" onClick={
+                () => {
+                    setGameFilter("started");
+                }
+            }>
                 <div style={{width: "90px", textAlign: "center"}}>
                     Started
                 </div>
             </Radio.Button>
-            <Radio.Button value="f">
+            <Radio.Button value="f" onClick={
+                () => {
+                    setGameFilter("unstarted");
+                }
+            }>
                 <div style={{width: "90px", textAlign: "center"}}>
                     Unstarted
                 </div>
             </Radio.Button>
-            <Radio.Button value="f">
+            <Radio.Button value="f" onClick={
+                () => {
+                    setGameFilter("hostedByMe");
+                }
+            }>
                 <div style={{width: "90px", textAlign: "center"}}>
                     Hosted By Me
                 </div>
@@ -534,6 +579,13 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                 to check the result!`
             );
         }
+    };
+
+    let drawNumberOnClick = function () {
+        setModalOpen(true);
+        setWaiting(true);
+        let drawNumberPromise = drawNumber(gamesLobbyProps.address, parseInt(selectedGameID));
+        drawNumberPromise.then(modalCallback);
     };
 
     return (
@@ -785,16 +837,21 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                 .filter((value) => value != 100)
                                                 .toString()}
                                         </Descriptions.Item>
-                                        <Descriptions.Item label="Draw Number for the Game">
-                                            <Button
-                                                disabled={
-                                                    game.startTime * 1e3 >
-                                                    Date.now()
-                                                }
-                                            >
-                                                Try to Draw Numbers
-                                            </Button>
-                                        </Descriptions.Item>
+                                        {
+                                            game.hostAddress.toLowerCase() === gamesLobbyProps.address.toLowerCase() &&
+                                            <Descriptions.Item label="Draw Number for the Game">
+                                                <Button
+                                                    disabled={
+                                                        game.startTime * 1e3 >
+                                                        Date.now()
+                                                    }
+                                                    onClick={drawNumberOnClick}
+                                                >
+                                                    Try to Draw Numbers
+                                                </Button>
+                                            </Descriptions.Item>
+                                        }
+
                                     </Descriptions>
                                     <div
                                         style={{
@@ -806,7 +863,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                         {!buyingCards ? (
                                             <Button
                                                 disabled={
-                                                    game.startTime > Date.now()
+                                                    game.startTime * 1e3 < Date.now()
                                                 }
                                                 onClick={() => {
                                                     setBuyingCards(true);
@@ -959,47 +1016,19 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                             }
 
                                             try {
-                                                // This time parsing logic is based on code provided by OpenAI's ChatGPT.
                                                 let time = values["startTime"];
                                                 let parts = time.split(":");
-                                                const hours = parseInt(
-                                                    parts[0],
-                                                    10
-                                                );
-                                                const minutes = parseInt(
-                                                    parts[1],
-                                                    10
-                                                );
-                                                const seconds = parseInt(
-                                                    parts[2],
-                                                    10
-                                                );
-                                                const totalSeconds =
-                                                    hours * 60 * 60 +
-                                                    minutes * 60 +
-                                                    seconds;
+                                                const hours = parseInt(parts[0], 10);
+                                                const minutes = parseInt(parts[1], 10);
+                                                const seconds = parseInt(parts[2], 10);
                                                 const dateString =
                                                     values["startDate"];
                                                 parts = dateString.split(".");
-                                                const year = parseInt(
-                                                    parts[0],
-                                                    10
-                                                );
-                                                const month =
-                                                    parseInt(parts[1], 10) - 1; // subtract 1 since months are zero-indexed in JS
-                                                const day = parseInt(
-                                                    parts[2],
-                                                    10
-                                                );
-                                                const date = new Date(
-                                                    year,
-                                                    month,
-                                                    day
-                                                );
-                                                values["startTime"] =
-                                                    Math.floor(
-                                                        date.getTime() / 1000
-                                                    ) + totalSeconds;
+                                                const year = parseInt(parts[0], 10);
+                                                const month = parseInt(parts[1], 10) - 1;
+                                                const day = parseInt(parts[2], 10);
+                                                const date = new Date(year, month, day, hours, minutes, seconds);
+                                                values["startTime"] = Math.floor(date.getTime() / 1000);
                                                 delete values["startDate"];
                                             } catch (e) {
                                                 setErrorMsg(
@@ -1118,7 +1147,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                 style={{
                                     display: "flex",
                                     flexDirection: "column",
-                                    justifyContent: "space-between",
+                                    justifyContent: "start",
                                     height: "100%",
                                 }}
                             >
@@ -1135,7 +1164,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                     <div
                                         style={{
                                             overflow: "auto",
-                                            height: "45vh",
+                                            height: "40vh",
                                         }}
                                     >
                                         {bingoCardComponents}
@@ -1143,7 +1172,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                 </div>
                                 <Card
                                     title={`Game ${selectedGameID}`}
-                                    style={{height: "40vh"}}
+                                    style={{height: "fit-content"}}
                                 >
                                     <Descriptions
                                         title="Game Infomation"
@@ -1190,6 +1219,9 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                     game.startTime * 1e3 >
                                                     Date.now()
                                                 }
+                                                onClick={
+                                                    drawNumberOnClick
+                                                }
                                             >
                                                 Try to Draw Numbers
                                             </Button>
@@ -1214,7 +1246,8 @@ function formatTime(date: Date): string {
     const minutes = String(date.getMinutes()).padStart(2, "0");
     const seconds = String(date.getSeconds()).padStart(2, "0");
 
-    return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+    // return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+    return date.toString();
 }
 
 interface BingoCardProps {

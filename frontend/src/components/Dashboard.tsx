@@ -28,7 +28,15 @@ import {
 } from "antd";
 import {Spin} from "antd/lib";
 import {GameResponse} from "../utils/interfaces";
-import {checkGameStatus, getAllGames, getAllPlayerGames, getGame, getPlayerGames} from "../utils/interact";
+import {
+    buyCard,
+    checkGameStatus, createGame,
+    getAllGames,
+    getAllPlayerGames,
+    getGame,
+    getPlayerCards,
+    getPlayerGames
+} from "../utils/interact";
 
 const Web3 = require("web3");
 const BN = Web3.utils.BN;
@@ -72,7 +80,14 @@ export const Dashboard: React.FC = () => {
             }
         });
     }, [address]);
-
+    let allGameLobby = <GamesGallery
+        address={address}
+        lobbyType={"joinedGames"}
+    ></GamesGallery>;
+    let joinedGameLobby = <GamesGallery
+        address={address}
+        lobbyType={"allGames"}
+    ></GamesGallery>;
     return (
         <Layout className="layout">
             <Header>
@@ -102,10 +117,7 @@ export const Dashboard: React.FC = () => {
                                 onClick: () => {
                                     setSelectedMenuKey("0");
                                     setContent(
-                                        <GamesGallery
-                                            address={address}
-                                            lobbyType={"joinedGames"}
-                                        ></GamesGallery>
+                                        allGameLobby
                                     );
                                 },
                             },
@@ -116,10 +128,7 @@ export const Dashboard: React.FC = () => {
                                 onClick: () => {
                                     setSelectedMenuKey("1");
                                     setContent(
-                                        <GamesGallery
-                                            address={address}
-                                            lobbyType={"allGames"}
-                                        ></GamesGallery>
+                                        joinedGameLobby
                                     );
                                 },
                             },
@@ -248,7 +257,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         poolValue: 0,
         numbersDrawn: [0],
     };
-
+    console.log("Rendering gamesgallery");
     let [page, setPage] = useState(1);
     let [joinedGameDrawerOpen, setJoinedGameDrawerOpen] = useState(false);
     let [selectedGameID, setSelectedGameID] = useState("");
@@ -259,13 +268,14 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     let [buyingCards, setBuyingCards] = useState(false);
     let [selectedNumbers, setSelectedNumbers] = useState([] as Array<number>);
     let [createGameDrawerOpen, setCreateGameDrawerOpen] = useState(false);
-    let [createGameFor, setCreateGameForm] = useState({});
+    let [createGameForm, setCreateGameForm] = useState({} as any);
     let [errorMsg, setErrorMsg] = useState("You must fill out the form.");
     let [showErrorMsg, setShowErrorMsg] = useState(false);
     let [waiting, setWaiting] = useState(false);
     let [result, setResult] = useState("");
     let [modalOpen, setModalOpen] = useState(false);
     let [games, setGames] = useState([] as Array<GameResponse>);
+    let [modalPrompt, setModalPrompt] = useState("");
     let numberSelectCallback = function (changedValue: any, values: any) {
         setShowErrorMsg(false);
         let nums = [];
@@ -306,7 +316,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                 }
             );
         },
-        [gamesLobbyProps.lobbyType]
+        [games.length, gamesLobbyProps.lobbyType]
     );
 
     useEffect(
@@ -321,7 +331,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                             cardPrice: parseInt(gameResponse.card_price),
                             hasCompleted: gameResponse.has_completed,
                             hostAddress: gameResponse.host_address,
-                            hostFee: parseInt(new BN(gameResponse.host_fee).div(new BN("1000000000000000000")).mul(new BN(100)).toString()),
+                            hostFee: parseInt(new BN(gameResponse.host_fee).mul(new BN(100)).div(new BN("1000000000000000000")).toString()),
                             numbersDrawn: gameResponse.drawn_numbers!,
                             poolValue: parseInt(gameResponse.pool_value),
                             startTime: parseInt(gameResponse.start_time),
@@ -338,7 +348,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     useEffect(
         function () {
             if (selectedGameID !== "") {
-                getCards(gamesLobbyProps.address, selectedGameID).then(
+                getPlayerCards(parseInt(selectedGameID), gamesLobbyProps.address).then(
                     function (cards: Array<Array<number>>) {
                         setCards(cards);
                     }
@@ -364,7 +374,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                         }}
                     >
                         <GameIcon
-                            gameID={games[(page - 1) * 6 + i].id.toString()}
+                            gameID={games[(page - 1) * pageSize + i].id.toString()}
                             onClick={function () {
                                 if (
                                     gamesLobbyProps.lobbyType == "joinedGames"
@@ -373,7 +383,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                 } else {
                                     setGeneralGameDrawerOpen(true);
                                 }
-                                setSelectedGameID(i.toString());
+                                setSelectedGameID(games[(page - 1) * pageSize + i].id.toString());
                             }}
                         />
                     </div>
@@ -384,7 +394,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         );
     }
     let row2: Array<JSX.Element> = [];
-    for (let i = 3; i < 6; i++) {
+    for (let i = 3; i < pageSize; i++) {
         row2.push(
             <Col key={i.toString()} span={24 / 3}>
                 {i < numGameOnPage ? (
@@ -396,7 +406,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                         }}
                     >
                         <GameIcon
-                            gameID={i.toString()}
+                            gameID={games[(page - 1) * pageSize + i].id.toString()}
                             onClick={function () {
                                 if (
                                     gamesLobbyProps.lobbyType == "joinedGames"
@@ -405,7 +415,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                 } else {
                                     setGeneralGameDrawerOpen(true);
                                 }
-                                setSelectedGameID(i.toString());
+                                setSelectedGameID(games[(page - 1) * pageSize + i].id.toString());
                             }}
                         />
                     </div>
@@ -447,6 +457,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         setCreateGameForm({});
         setShowErrorMsg(false);
         setErrorMsg("You must fill out the form.");
+        setModalPrompt("");
     };
 
     let joinedGameFilterRadio = (
@@ -510,6 +521,20 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     const {
         token: {colorBgContainer, borderRadius, colorBorder},
     } = theme.useToken();
+    let modalCallback = function (result: string) {
+        setWaiting(false);
+        if (result.includes("ERROR")) {
+            setModalPrompt(`Failed to carry out the transaction: ${result.replaceAll("ERROR:", "")}`);
+        } else {
+            setModalPrompt(
+                `Your transaction has been submitted to the blockchain for processing. 
+                The transaction ID is ${result}. 
+                Please go to 
+                https://mumbai.polygonscan.com/tx/${result} 
+                to check the result!`
+            );
+        }
+    };
 
     return (
         <div>
@@ -531,6 +556,9 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                             <div className="content"/>
                         </Spin>
                     </div>
+                }
+                {
+                    (!waiting) && modalPrompt
                 }
             </Modal>
             <Layout>
@@ -571,30 +599,36 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                         bordered={true}
                         style={{width: "fit-content", height: "100%"}}
                     >
-                        {gamesLobbyProps.lobbyType == "allGames" && (
-                            <>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "end",
-                                        marginTop: "24px",
-                                        marginBottom: "24px",
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                alignItems: "end",
+                                justifyContent: "space-evenly",
+                                marginTop: "24px",
+                                marginBottom: "24px",
+                            }}
+                        >
+                            <Button
+                                onClick={() => {
+                                    setGames([]);
+                                }}
+                            >
+                                Refresh
+                            </Button>
+
+                            {
+                                gamesLobbyProps.lobbyType == "allGames" &&
+                                <Button
+                                    onClick={() => {
+                                        setCreateGameDrawerOpen(true);
                                     }}
                                 >
-                                    <Button
-                                        onClick={() => {
-                                            setCreateGameDrawerOpen(true);
-                                        }}
-                                    >
-                                        {" "}
-                                        Create a New Game{" "}
-                                    </Button>
-                                </div>
-                                <Divider/>
-                            </>
-                        )}
-
+                                    Create a New Game
+                                </Button>
+                            }
+                        </div>
+                        <Divider/>
                         <Row gutter={[64, 64]} style={{width: "75vw"}}>
                             {row1}
                             {row2}
@@ -725,13 +759,16 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                     game.hostAddress.length
                                                 )}
                                         </Descriptions.Item>
+                                        <Descriptions.Item label="Host fee percentage">
+                                            {game.hostFee}
+                                        </Descriptions.Item>
                                         <Descriptions.Item label="Card Price in Wei">
                                             {game.cardPrice}
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Start Time">
                                             {formatTime(gameStartTime)}
                                         </Descriptions.Item>
-                                        <Descriptions.Item label="Number Draw Interval in Seconds">
+                                        <Descriptions.Item label="Draw Interval in Seconds">
                                             {gameDrawNumberInterval}
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Completed?">
@@ -793,9 +830,16 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                         } else {
                                                             setWaiting(true);
                                                             setModalOpen(true);
-                                                            setTimeout(() => {
-                                                                setWaiting(false);
-                                                            }, 5000);
+                                                            buyCard(
+                                                                gamesLobbyProps.address,
+                                                                {
+                                                                    card: selectedNumbers,
+                                                                    gameId: parseInt(selectedGameID),
+                                                                    value: game.cardPrice.toString()
+                                                                }
+                                                            ).then(
+                                                                modalCallback
+                                                            );
                                                         }
                                                     }
                                                 }
@@ -803,9 +847,11 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                     Confirm
                                                 </Button>
                                                 <Button
-                                                    onClick={() => {
-                                                        setBuyingCards(false);
-                                                    }}
+                                                    onClick={
+                                                        () => {
+                                                            setBuyingCards(false);
+                                                        }
+                                                    }
                                                 >
                                                     Cancle
                                                 </Button>
@@ -905,11 +951,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                 );
                                                 return;
                                             }
-                                            if (
-                                                !/\d\d\d\d\.\d\d\.\d\d/.test(
-                                                    values["startDate"]
-                                                )
-                                            ) {
+                                            if (!/\d\d\d\d\.\d\d\.\d\d/.test(values["startDate"])) {
                                                 setErrorMsg(
                                                     "The start date is of invalid value."
                                                 );
@@ -1010,7 +1052,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                         <Form.Item
                                             name={"turnTime"}
                                             label={
-                                                "Number draw interval in seconds"
+                                                "Draw interval in seconds"
                                             }
                                         >
                                             <InputNumber/>
@@ -1037,14 +1079,26 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                         }}
                                     >
                                         <Button
-                                            onClick={() => {
-                                                if (errorMsg.length != 0) {
-                                                    setShowErrorMsg(true);
-                                                } else {
-                                                    // todo: submit the create new game request
-                                                    alert("Submitted!");
+                                            onClick={
+                                                () => {
+                                                    if (errorMsg.length != 0) {
+                                                        setShowErrorMsg(true);
+                                                    } else {
+                                                        setModalOpen(true);
+                                                        setWaiting(true);
+                                                        createGame(
+                                                            gamesLobbyProps.address,
+                                                            {
+                                                                card_price: createGameForm["cardPrice"].toString(),
+                                                                host_fee: createGameForm["hostFee"].toString(),
+                                                                start_time: createGameForm["startTime"].toString(),
+                                                                turn_time: createGameForm["turnTime"].toString(),
+                                                                value: createGameForm["cardPrice"].mul(new BN(3)).toString()
+                                                            }
+                                                        ).then(modalCallback);
+                                                    }
                                                 }
-                                            }}
+                                            }
                                         >
                                             Confirm New Game
                                         </Button>
@@ -1106,10 +1160,13 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                         <Descriptions.Item label="Card Price in Wei">
                                             {game.cardPrice}
                                         </Descriptions.Item>
+                                        <Descriptions.Item label="Host fee percentage">
+                                            {game.hostFee}
+                                        </Descriptions.Item>
                                         <Descriptions.Item label="Start Time">
                                             {formatTime(gameStartTime)}
                                         </Descriptions.Item>
-                                        <Descriptions.Item label="Number Draw Interval in Seconds">
+                                        <Descriptions.Item label="Draw Interval in Seconds">
                                             {gameDrawNumberInterval}
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Completed?">

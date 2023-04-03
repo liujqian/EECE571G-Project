@@ -82,6 +82,17 @@ export const checkGameStatus = async (gameID: number): Promise<GameResponse> => 
     };
 };
 
+export const getPlayerCards = async (gameID: number, playerAddress: string): Promise<Array<Array<number>>> => {
+    let cards = await bingoContract.methods
+        .getPlayerCards(gameID, playerAddress)
+        .call();
+    let realCards = [];
+    for (let card of cards) {
+        realCards.push(card[0]);
+    }
+    return realCards;
+};
+
 export const getPlayerGames = async (address: string): Promise<number[]> => {
     return await bingoContract.methods
         .getPlayerGames(address)
@@ -117,7 +128,7 @@ export const drawNumber = async (
         });
         return txHash;
     } catch (error: any) {
-        return "😥 " + error.message;
+        return "ERROR:" + error.message;
     }
 };
 
@@ -146,7 +157,7 @@ export const buyCard = async (
         });
         return txHash;
     } catch (error: any) {
-        return "😥 " + error.message;
+        return "ERROR:" + error.message;
     }
 };
 
@@ -180,7 +191,7 @@ export const createGame = async (
         });
         return txHash;
     } catch (error: any) {
-        return "😥 " + error.message;
+        return "ERROR:" + error.message;
     }
 };
 

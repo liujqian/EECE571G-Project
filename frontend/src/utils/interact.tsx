@@ -2,9 +2,8 @@ import {connectWallet} from "./connect";
 import {CardInfo, GameRequest, GameResponse, TransactionParameters,} from "./interfaces";
 
 const Web3 = require("web3");
-const infuraKey = process.env.REACT_APP_INFURA_KEY;
-console.log("Infura key is " + infuraKey);
-const web3 = new Web3("https://polygon-mumbai.infura.io/v3/" + infuraKey);
+const apiKey = process.env.REACT_APP_ALCHEMY_KEY;
+const web3 = new Web3("wss://polygon-mumbai.g.alchemy.com/v2/" + apiKey);
 const contractABI = require("./contractABI.json");
 const contractAddress = "0xF56819d9FAf22Ba131dC3227E606f0173558F52F";
 
@@ -238,17 +237,3 @@ const callLogger = async () => {
     // console.log("buy card trasaction hash", buyCardTxHash);
     console.log("create game transaction hash", createGameTxHash);
 };
-
-// ToDo: add event listeners
-
-// const eventDrawNumber = bingoContract.events.NumberDraw();
-
-// eventDrawNumber.on("data", (eventData: any) => {
-//     console.log("draw number:", eventData.returnValues.newValue);
-// });
-
-// const eventBuyCard = bingoContract.events.CardPurchase();
-
-// eventBuyCard.on("connected", (eventData: any) => {
-//     console.log("card purchased:", eventData.returnValues.newValue);
-// });

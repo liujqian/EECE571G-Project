@@ -5,7 +5,6 @@ import {
     getCurrentWalletConnected,
     removeWalletListener,
 } from "../utils/connect";
-
 import {UserOutlined} from "@ant-design/icons";
 import {getCards, getGameInfo} from "../utils/stubs";
 import {
@@ -20,15 +19,16 @@ import {
     Input,
     InputNumber,
     Layout,
-    Menu, Modal,
+    Menu, Modal, notification,
     Pagination,
     Radio,
     Row,
     theme,
 } from "antd";
 import {Spin} from "antd/lib";
-import {GameResponse} from "../utils/interfaces";
+import {BuyCardEvent, GameResponse, HookUpdater, WaitingList} from "../utils/interfaces";
 import {
+    bingoContract,
     buyCard,
     checkGameStatus, createGame, drawNumber,
     getAllGames,
@@ -257,7 +257,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         poolValue: 0,
         numbersDrawn: [0],
     };
-    console.log("Rendering gamesgallery");
+    console.log("Rendering the main game gallery.");
     let [page, setPage] = useState(1);
     let [joinedGameDrawerOpen, setJoinedGameDrawerOpen] = useState(false);
     let [selectedGameID, setSelectedGameID] = useState("");
@@ -275,7 +275,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     let [result, setResult] = useState("");
     let [modalOpen, setModalOpen] = useState(false);
     let [games, setGames] = useState([] as Array<GameResponse>);
-    let [modalPrompt, setModalPrompt] = useState("");
+    let [modalPrompt, setModalPrompt] = useState(<></>);
     let numberSelectCallback = function (changedValue: any, values: any) {
         setShowErrorMsg(false);
         let nums = [];
@@ -327,7 +327,6 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
             gamesPromise.then(
                 function (games: Array<GameResponse>) {
                     let filteredGames = games.filter(filters[gameFilter]);
-                    console.log(filteredGames);
                     setGames(filteredGames);
                 }
             );
@@ -441,17 +440,20 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
             </Col>
         );
     }
-    let bingoCardComponents = cards.map(function (singleCard, idx) {
-        return (
-            <BingoCard
-                cardNumbers={singleCard}
-                tickedNumbers={game.numbersDrawn.filter(
-                    (value) => value != 100
-                )}
-                key={idx}
-            ></BingoCard>
-        );
-    });
+
+    let bingoCardComponents = cards.map(
+        function (singleCard, idx) {
+            return (
+                <BingoCard
+                    cardNumbers={singleCard}
+                    tickedNumbers={game.numbersDrawn.filter(
+                        (value) => value != 100
+                    )}
+                    key={idx}
+                ></BingoCard>
+            );
+        }
+    );
 
     let gameStartTime = new Date(game.startTime * 1e3);
     let gameDrawNumberInterval = game.turnTime;
@@ -473,7 +475,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         setCreateGameForm({});
         setShowErrorMsg(false);
         setErrorMsg("You must fill out the form.");
-        setModalPrompt("");
+        setModalPrompt(<></>);
     };
 
 
@@ -569,14 +571,15 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     let modalCallback = function (result: string) {
         setWaiting(false);
         if (result.includes("ERROR")) {
-            setModalPrompt(`Failed to carry out the transaction: ${result.replaceAll("ERROR:", "")}`);
+            setModalPrompt(<p>Failed to carry out the transaction: ${result.replaceAll("ERROR:", "")}</p>);
         } else {
             setModalPrompt(
-                `Your transaction has been submitted to the blockchain for processing. 
-                The transaction ID is ${result}. 
-                Please go to 
-                https://mumbai.polygonscan.com/tx/${result} 
-                to check the result!`
+                <p>Your transaction has been submitted to the blockchain for processing.
+                    The transaction ID is {result}.<br/>
+                    Please go to<br/>
+                    <a>https://mumbai.polygonscan.com/tx/{result} <br/>
+                    </a>
+                    to check the result!</p>
             );
         }
     };
@@ -1237,16 +1240,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     );
 };
 
-// This utility function to format a JavaScript Date object is provided by OpenAI's ChatGPT.
 function formatTime(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const seconds = String(date.getSeconds()).padStart(2, "0");
-
-    // return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
     return date.toString();
 }
 
@@ -1277,6 +1271,7 @@ function generateRandomCard(): Array<number> {
             while (randNum in generated) {
                 randNum = getRandomInt(ranges[i][0], ranges[i][1]);
             }
+            generated[randNum] = true;
             if (i * 5 + j == 12) {
                 randNum = 0;
             }

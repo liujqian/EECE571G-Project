@@ -6,7 +6,6 @@ import {
     removeWalletListener,
 } from "../utils/connect";
 import {UserOutlined} from "@ant-design/icons";
-import {getCards, getGameInfo} from "../utils/stubs";
 import {
     Avatar,
     Button,
@@ -19,7 +18,7 @@ import {
     Input,
     InputNumber,
     Layout,
-    Menu, Modal, notification,
+    Menu, Modal,
     Pagination,
     Radio,
     Row,
@@ -33,9 +32,7 @@ import {
     checkGameStatus, createGame, drawNumber,
     getAllGames,
     getAllPlayerGames,
-    getGame,
     getPlayerCards,
-    getPlayerGames
 } from "../utils/interact";
 
 const Web3 = require("web3");
@@ -276,6 +273,8 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
     let [modalOpen, setModalOpen] = useState(false);
     let [games, setGames] = useState([] as Array<GameResponse>);
     let [modalPrompt, setModalPrompt] = useState(<></>);
+    const [createGameFormControl] = Form.useForm();
+
     let numberSelectCallback = function (changedValue: any, values: any) {
         setShowErrorMsg(false);
         let nums = [];
@@ -308,7 +307,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
 
 
     let filters: { [filterName: string]: (game: GameResponse) => boolean } = {
-        noFilter: function (game: GameResponse): boolean {
+        noFilter: function (_: GameResponse): boolean {
             return true;
         },
         started: function (game: GameResponse): boolean {
@@ -371,6 +370,25 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
             }
         },
         [selectedGameID]
+    );
+
+    useEffect(
+        function () {
+            const eventBuyCard = bingoContract.events.CardPurchase();
+            eventBuyCard.on(
+                "data", (eventData: any) => {
+                    console.log("card purchased:", eventData.returnValues);
+                    setGames([]);
+                }
+            );
+            const eventGameCreation = bingoContract.events.GameCreation();
+            eventGameCreation.on(
+                "data", (eventData: any) => {
+                    console.log("Game created:", eventData.returnValues);
+                    setGames([]);
+                }
+            );
+        }, [1]
     );
 
     let totalGameCount = games.length;
@@ -476,6 +494,8 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
         setShowErrorMsg(false);
         setErrorMsg("You must fill out the form.");
         setModalPrompt(<></>);
+        setBuyingCards(false);
+        createGameFormControl.resetFields();
     };
 
 
@@ -700,7 +720,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                 defaultCurrent={1}
                                 total={totalGameCount}
                                 pageSize={pageSize}
-                                onChange={(page, pageSize) => {
+                                onChange={(page, _) => {
                                     setPage(page);
                                 }}
                             />
@@ -735,7 +755,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                         <div
                                             style={{
                                                 overflow: "auto",
-                                                height: "35vh",
+                                                height: "29vh",
                                             }}
                                         >
                                             {numberInputForm}
@@ -745,7 +765,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                 display: "flex",
                                                 flexDirection: "column",
                                                 alignItems: "center",
-                                                justifyContent: "space-evenly",
+                                                justifyContent: "start",
                                             }}
                                         >
                                             {showErrorMsg && (
@@ -957,6 +977,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                     style={{height: "fit-content"}}
                                 >
                                     <Form
+                                        form={createGameFormControl}
                                         onValuesChange={function (
                                             changedValues: any,
                                             values: any
@@ -1128,6 +1149,7 @@ const GamesGallery: React.FC<GamesLobbyProps> = (
                                                                 value: createGameForm["cardPrice"].mul(new BN(3)).toString()
                                                             }
                                                         ).then(modalCallback);
+                                                        createGameFormControl.resetFields();
                                                     }
                                                 }
                                             }

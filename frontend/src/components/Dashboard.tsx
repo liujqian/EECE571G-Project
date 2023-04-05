@@ -26,7 +26,7 @@ import {
     theme,
 } from "antd";
 import {Spin} from "antd/lib";
-import {BuyCardEvent, GameResponse, HookUpdater, WaitingList} from "../utils/interfaces";
+import {GameResponse} from "../utils/interfaces";
 import {
     bingoContract,
     buyCard,
